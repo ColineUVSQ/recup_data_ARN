@@ -42,9 +42,9 @@ def ajout_sommet(G, compteur, compteur_tige, position, typ, poids, label, positi
     
     G.add_node(compteur, position=position, type=typ, poids=poids, chaine=[valeur_debut])
     if typ == 1 : ## il faut peut etre rajouter des aretes si on a deja mis le sommet de la deuxieme chaine
-        if compteur == 14 :
-            print("ramou")
-            print(voisin_chaine)
+#         if compteur == 14 :
+#             print("ramou")
+#             print(voisin_chaine)
         noeud_existe = False
         for noeud, data in G.nodes(data=True) :
             if voisin_chaine >= data["position"][0] and voisin_chaine <= data["position"][1] :
@@ -55,16 +55,14 @@ def ajout_sommet(G, compteur, compteur_tige, position, typ, poids, label, positi
             
         
     if label == "B53" :
-        if int_tige == 1 :
-            if valeur_debut == 3 or valeur_debut == 4 :
-                G.add_edge(compteur_tige, compteur, label=label, long_range=long_range)
-            else :
-                G.add_edge(compteur, compteur_tige, label=label, long_range=long_range)
+        if G.nodes[compteur]["position"][0] < G.nodes[compteur_tige]["position"][0] :
+            if abs(G.nodes[compteur_tige]["position"][0] - G.nodes[compteur]["position"][1]) == 1 :
+                if (compteur, compteur_tige) not in G.edges() :
+                    G.add_edge(compteur, compteur_tige, label="B53", long_range=False)
         else :
-            if valeur_debut == 3 or valeur_debut == 4 :
-                G.add_edge(compteur, compteur_tige, label=label, long_range=long_range)
-            else :
-                G.add_edge(compteur_tige, compteur, label=label, long_range=long_range)
+            if abs(G.nodes[compteur]["position"][0] - G.nodes[compteur_tige]["position"][1]) == 1 :
+                if (compteur_tige, compteur) not in G.edges() :
+                    G.add_edge(compteur_tige, compteur, label="B53", long_range=False)
     else :
         G.add_edge(compteur_tige, compteur, label=label, long_range=long_range)
         G.add_edge(compteur, compteur_tige, label=label, long_range=long_range)
@@ -118,7 +116,7 @@ def ajout_sommet(G, compteur, compteur_tige, position, typ, poids, label, positi
 #     
 #     return G
 
-def type_sommet(voisins, new_position, G):
+def type_sommet(voisins, new_position, G, graphe_base):
     
     if new_position == G.nodes[1]["position"][0] :
         return 11 
@@ -136,13 +134,13 @@ def type_sommet(voisins, new_position, G):
         type_sommet_actuel = 0
     if len(voisins) == 1 : ##Pas de voisin en dehors de la sequence
         for voisin in voisins :
-            if graphes[nom_cle][new_position][voisin]["label"] == "B53": 
+            if graphe_base[new_position][voisin]["label"] == "B53": 
                 type_sommet_actuel = 0
             else :
                 type_sommet_actuel = 3
     elif len(voisins) == 2 : ## Un autre voisin en dehors de la sequence
         for voisin in voisins :
-            label_voisin = graphes[nom_cle][new_position][voisin]["label"]
+            label_voisin = graphe_base[new_position][voisin]["label"]
             if label_voisin != "B53" :
                 if label_voisin == 'CWW' and graphes[nom_cle][new_position][voisin]["long_range"] == False : #and ((voisin <= compteur_tige2 and voisin > compteur_tige2-5) or (voisin >= compteur_tige2 and voisin < compteur_tige2+5) or (voisin <= G.node[valeur_debut]["position"][0] and voisin > G.node[valeur_debut]["position"][0]-10) or (voisin >= G.node[valeur_debut]["position"][0] and voisin < G.node[valeur_debut]["position"][0]+10)) :
                 ##sommet de type 0
@@ -152,9 +150,9 @@ def type_sommet(voisins, new_position, G):
                     type_sommet_actuel = 3
     else : ##Plus d'un autre voisin en dehors de la sequence
         for voisin in voisins : #Recherche d'une liaison can de tige
-            label_voisin = graphes[nom_cle][new_position][voisin]["label"]
+            label_voisin = graphe_base[new_position][voisin]["label"]
             if label_voisin != "B53" :
-                if label_voisin == 'CWW' and graphes[nom_cle][new_position][voisin]["long_range"] == False : #and ((voisin <= compteur_tige2 and voisin > compteur_tige2-5) or (voisin >= compteur_tige2 and voisin < compteur_tige2+5) or (voisin <= G.node[valeur_debut]["position"][0] and voisin > G.node[valeur_debut]["position"][0]-10) or (voisin >= G.node[valeur_debut]["position"][0] and voisin < G.node[valeur_debut]["position"][0]+10)) :
+                if label_voisin == 'CWW' and graphe_base[new_position][voisin]["long_range"] == False : #and ((voisin <= compteur_tige2 and voisin > compteur_tige2-5) or (voisin >= compteur_tige2 and voisin < compteur_tige2+5) or (voisin <= G.node[valeur_debut]["position"][0] and voisin > G.node[valeur_debut]["position"][0]-10) or (voisin >= G.node[valeur_debut]["position"][0] and voisin < G.node[valeur_debut]["position"][0]+10)) :
                     type_sommet_actuel = 2
                     #compteur_tige2 = voisin
         if type_sommet_actuel == -1 :
@@ -170,8 +168,8 @@ def extension_tige(G, graphes, nom_cle, compteur, compteur_tige, positions_ajout
     poids_sommet = 1
     type_sommet_prec = None
     type_sommet_actuel = None 
-    type_sommet_voisin = None
-    type_sommet_voisin_prec = None
+    type_sommet_voisin = -1
+    type_sommet_voisin_prec = -1
    
     if valeur_debut == 2 or valeur_debut == 1:
         new_position = G.node[valeur_debut]["position"][0]-i*int_tige
@@ -191,118 +189,372 @@ def extension_tige(G, graphes, nom_cle, compteur, compteur_tige, positions_ajout
     chaine_sommet_voisin_prec = -1
     voisin_dans_chaine = False
     
-    while i < 10 and new_position > 0 and new_position < graphes[nom_cle].number_of_nodes() :
-        
+    while i < 10 and new_position > 0 and new_position <= graphes[nom_cle].number_of_nodes() :
+        if i == 0 or new_position not in positions_ajoutees[:4] :## pour ne pas revenir sur le motif
 #         if i == 3 :
 #             print("ramou")
 #             print(chaine)
 #             print(compteur)
         #print(i)
-        voisins = graphes[nom_cle][new_position]
-        
-#         if nom_cle == ('4V88', 'A6') and occ["num_motif"] == 17 and occ["num_occ"] == 55 :
-#             print(valeur_debut)
-#             print(G.edges.data())
-        ### On cherche le type de sommet ##
-        
-                
-        ## ##
-        #if nom_cle == ('1FJG', 'A') :
-        #    print("petit rat")
-        #    print(type_sommet_actuel)
-        #    print(new_position)
-        #    print(poids_sommet)
-        
-#         if compteur == 38 :
-#             print("petit rat")
-#             print(chaine)
-        
-        type_sommet_actuel = type_sommet(voisins, new_position, G)
-        
+            voisins = graphes[nom_cle][new_position]
+            
+    #         if nom_cle == ('4V88', 'A6') and occ["num_motif"] == 17 and occ["num_occ"] == 55 :
+    #             print(valeur_debut)
+    #             print(G.edges.data())
+            ### On cherche le type de sommet ##
+            
+                    
+            ## ##
+            #if nom_cle == ('1FJG', 'A') :
+            #    print("petit rat")
+            #    print(type_sommet_actuel)
+            #    print(new_position)
+            #    print(poids_sommet)
+            
+    #         if compteur == 38 :
+    #             print("petit rat")
+    #             print(chaine)
+            
+            type_sommet_actuel = type_sommet(voisins, new_position, G, graphes[nom_cle])
+            
+    
+            
+            if type_sommet_actuel == 1 :
+                for voisin in voisins :
+                    label_voisin = graphes[nom_cle][new_position][voisin]["label"]
+                    if label_voisin != "B53" :
+                        if label_voisin == 'CWW' and graphes[nom_cle][new_position][voisin]["long_range"] == False : #and ((voisin <= compteur_tige2 and voisin > compteur_tige2-5) or (voisin >= compteur_tige2 and voisin < compteur_tige2+5) or (voisin <= G.node[valeur_debut]["position"][0] and voisin > G.node[valeur_debut]["position"][0]-10) or (voisin >= G.node[valeur_debut]["position"][0] and voisin < G.node[valeur_debut]["position"][0]+10)) :
+                            voisin_dans_chaine = False
+                            for k in range(4) :
+                                if voisin in positions_chaines[k] : ## pour savoir si le voisin appartient a une des chaines ou pas 
+                                    
+                                    type_sommet_voisin_prec = type_sommet_voisin
+                                    type_sommet_voisin = type_sommet(graphes[nom_cle][voisin],voisin, G, graphes[nom_cle])
+                                    chaine_sommet_voisin_prec = chaine_sommet_voisin
+                                    chaine_sommet_voisin = k
+                                    voisin_chaine_prec = voisin_chaine
+                                    voisin_chaine = voisin
 
-        
-        if type_sommet_actuel == 1 :
-            for voisin in voisins :
-                label_voisin = graphes[nom_cle][new_position][voisin]["label"]
-                if label_voisin != "B53" :
-                    if label_voisin == 'CWW' and graphes[nom_cle][new_position][voisin]["long_range"] == False : #and ((voisin <= compteur_tige2 and voisin > compteur_tige2-5) or (voisin >= compteur_tige2 and voisin < compteur_tige2+5) or (voisin <= G.node[valeur_debut]["position"][0] and voisin > G.node[valeur_debut]["position"][0]-10) or (voisin >= G.node[valeur_debut]["position"][0] and voisin < G.node[valeur_debut]["position"][0]+10)) :
-                        voisin_dans_chaine = False
-                        for k in range(4) :
-                            if voisin in positions_chaines[k] : ## pour savoir si le voisin appartient a une des chaines ou pas 
-                                
-                                type_sommet_voisin_prec = type_sommet_voisin
-                                type_sommet_voisin = type_sommet(graphes[nom_cle][voisin],voisin, G)
-                                chaine_sommet_voisin_prec = chaine_sommet_voisin
-                                chaine_sommet_voisin = k
+#                                     if compteur == 6 :
+#                                         print("ramou")
+#                                         print(voisin_chaine)
+#                                         print(chaine_sommet_voisin)
+#                                         print(chaine_sommet_voisin_prec)
+                                    
+                                    voisin_dans_chaine = True
+                            
+                            if voisin_dans_chaine == False :
                                 voisin_chaine_prec = voisin_chaine
-                                voisin_chaine = voisin
-                                
-                                if compteur == 6 :
-                                    print("ramou")
-                                    print(voisin_chaine)
-                                    print(chaine_sommet_voisin)
-                                    print(chaine_sommet_voisin_prec)
-                                
-                                voisin_dans_chaine = True
-                        if voisin_dans_chaine == False :
-                            voisin_chaine_prec = voisin_chaine
-                            voisin_chaine = -1
-                            chaine_sommet_voisin_prec = chaine_sommet_voisin
-                            chaine_sommet_voisin = -1
-                            type_sommet_voisin_prec = type_sommet_voisin
-                            type_sommet_voisin = None
+                                voisin_chaine = -1
+                                chaine_sommet_voisin_prec = chaine_sommet_voisin
+                                chaine_sommet_voisin = -1
+                                type_sommet_voisin_prec = type_sommet_voisin
+                                type_sommet_voisin = -1
+    #         else :
+    #             voisin_chaine_prec = -1   
+    #                                 if compteur == 43 :
+    #                                     print("petit rat")
+    #                                     print(voisin_chaine)  
+                    #                                 noeud_a_trouver = -1
+                    #                                 for noeud, data in G.nodes(data=True) :
+                    #                                     if voisin >= data["position"][0] and voisin <= data["position"][1] :
+                    #                                         noeud_a_trouver = noeud
+                    #                                         type_a_trouver = data["type"]
+                    #                                 if noeud_a_trouver != -1 :
+                    #                                     if len(chaine) > 0 :
+                    #                                         chaine[0].append(noeud_a_trouver)
+                    #                                         chaine[2].append(type_a_trouver)
+                    #                                         for elt in G.nodes[noeud_a_trouver]["chaine"] :
+                    #                                             if elt not in chaine[1] :
+                    #                                                 chaine[1].append(elt)
+                    #                                     else : 
+                    #                                         chaine = ([noeud_a_trouver], list(G.nodes[noeud_a_trouver]["chaine"]), [type_a_trouver])
+                    #                                 else :
+                    #                                     print("probleme42")
+                    #                         else :
+                    #                             chaine = []
+                 
+            if new_position not in positions_ajoutees :
+#                 if compteur == 19 :
+#                     print("ramousnif")
+#                     print(poids_sommet)
+#                     print(type_sommet_prec)
+                if type_sommet_actuel == 0 or type_sommet_actuel == 1 :  
+                    
+                    if nom_cle == ('5J7L', 'DA') and positions_ajoutees[0] == 1226 and compteur == 23:
+                            print(compteur)
+                            print(type_sommet_voisin_prec)
+                            print(type_sommet_voisin)
+                            print(voisin_chaine)
+                            print(voisin_chaine_prec)
+                            print(chaine_sommet_voisin_prec)
+                            print(chaine_sommet_voisin)
+                            print(type_sommet_prec)
+                            print(type_sommet_actuel)
+                            print(-1==-1)
+                    
+                    if type_sommet_actuel == type_sommet_prec  and (type_sommet_actuel == 0 or (type_sommet_actuel == 1 and ((type_sommet_voisin_prec == type_sommet_voisin and (type_sommet_voisin == 1 or type_sommet_voisin == 0)) and (chaine_sommet_voisin == chaine_sommet_voisin_prec) and (abs(voisin_chaine-voisin_chaine_prec) == 1 or voisin_chaine == -1 or voisin_chaine_prec == -1) or (type_sommet_voisin == -1 and type_sommet_voisin_prec == -1) ))): 
+                        poids_sommet += 1
                         
-#         else :
-#             voisin_chaine_prec = -1   
-#                                 if compteur == 43 :
-#                                     print("petit rat")
-#                                     print(voisin_chaine)  
-                #                                 noeud_a_trouver = -1
-                #                                 for noeud, data in G.nodes(data=True) :
-                #                                     if voisin >= data["position"][0] and voisin <= data["position"][1] :
-                #                                         noeud_a_trouver = noeud
-                #                                         type_a_trouver = data["type"]
-                #                                 if noeud_a_trouver != -1 :
-                #                                     if len(chaine) > 0 :
-                #                                         chaine[0].append(noeud_a_trouver)
-                #                                         chaine[2].append(type_a_trouver)
-                #                                         for elt in G.nodes[noeud_a_trouver]["chaine"] :
-                #                                             if elt not in chaine[1] :
-                #                                                 chaine[1].append(elt)
-                #                                     else : 
-                #                                         chaine = ([noeud_a_trouver], list(G.nodes[noeud_a_trouver]["chaine"]), [type_a_trouver])
-                #                                 else :
-                #                                     print("probleme42")
-                #                         else :
-                #                             chaine = []
-             
-        if new_position not in positions_ajoutees :
-            if compteur == 19 :
-                print("ramousnif")
-                print(poids_sommet)
-                print(type_sommet_prec)
-            if type_sommet_actuel == 0 or type_sommet_actuel == 1 :  
-                
-                if type_sommet_actuel == type_sommet_prec  and (type_sommet_actuel == 0 or (type_sommet_actuel == 1 and ((type_sommet_voisin_prec == type_sommet_voisin and (type_sommet_voisin == 1 or type_sommet_voisin == 0)) and (chaine_sommet_voisin == chaine_sommet_voisin_prec) or type_sommet_voisin_prec == None ) )): 
-                    poids_sommet += 1
-#                 elif type_sommet_actuel == 1 and type_sommet_voisin_prec != type_sommet_voisin and type_sommet_voisin != None  : ## il faut ajouter le sommet precedent
-#                     
-#                     
+    #                 elif type_sommet_actuel == 1 and type_sommet_voisin_prec != type_sommet_voisin and type_sommet_voisin != None  : ## il faut ajouter le sommet precedent
+    #                     
+    #                     
+                    else :
+                        if (type_sommet_prec == 1 or type_sommet_prec == 0) :  ## on va ajouter le sommet precedent car il est de type 0 ou 1   
+                            
+                            
+                            deja_vu = False
+                            for k in range(min(position_prec_groupe, position_prec), max(position_prec, position_prec_groupe)+1) :
+                                if k in positions_ajoutees :
+                                    deja_vu = True
+                                    
+                            #if position_prec not in positions_ajoutees :
+                            if deja_vu == False :
+    #                             if compteur == 38 :
+    #                                 print("ramousnif")
+    #                                 print(chaine)
+                                    
+                                if position_prec - position_prec_groupe <= 0 :
+                                    if type_sommet_actuel != 1 :
+                                        ajout_sommet(G, compteur, compteur_tige, (position_prec,position_prec_groupe), type_sommet_prec, poids_sommet, "B53", positions_ajoutees, int_tige, valeur_debut, voisin_chaine = voisin_chaine)
+                                    else : 
+                                        ajout_sommet(G, compteur, compteur_tige, (position_prec,position_prec_groupe), type_sommet_prec, poids_sommet, "B53", positions_ajoutees, int_tige, valeur_debut, voisin_chaine = voisin_chaine_prec)
+                    
+                                else : 
+                                    if type_sommet_actuel != 1 :
+                                        ajout_sommet(G, compteur, compteur_tige, (position_prec_groupe,position_prec), type_sommet_prec, poids_sommet, "B53", positions_ajoutees, int_tige, valeur_debut, voisin_chaine = voisin_chaine)
+                                    else :
+                                        ajout_sommet(G, compteur, compteur_tige, (position_prec_groupe,position_prec), type_sommet_prec, poids_sommet, "B53", positions_ajoutees, int_tige, valeur_debut, voisin_chaine = voisin_chaine_prec)
+                                compteur_tige = compteur
+                                compteur = compteur+1
+                            else : ## le sommet d'avant existe deja mais il est peut etre en groupe maintenant
+                                
+                                if poids_sommet != 1 :
+                                    #print("petit rat")
+                                    num_sommet_prec = -1
+                                    #print("ramou")
+                                    for noeud in G.nodes() :
+                                        for k in range(min(position_prec_groupe, position_prec), max(position_prec, position_prec_groupe)+1) :
+                                            if  k <= G.nodes[noeud]["position"][1] and k >= G.nodes[noeud]["position"][0] :
+                                                num_sommet_prec = noeud ## retrouver le numero du sommet
+                                                if valeur_debut not in G.nodes[noeud]["chaine"] :
+                                                    G.nodes[noeud]["chaine"].append(valeur_debut)
+                                                    
+                                                for voisin in G[noeud] :
+                                                    if G.nodes[voisin]["type"] == None :
+                                                        G.nodes[voisin]["chaine"].append(valeur_debut)
+                                    if G.nodes[num_sommet_prec]["type"] == None :
+                                        G.nodes[num_sommet_prec]["type"] = type_sommet_prec
+                                        del(G.nodes[noeud]["chaine"][:])
+                                        G.nodes[noeud]["chaine"].append(valeur_debut)
+                                    if num_sommet_prec == -1 :
+                                        print("probleme6") 
+                                        
+                                    if position_prec - position_prec_groupe <= 0 :
+                                        G.nodes[num_sommet_prec]["position"] = (min(position_prec, G.nodes[num_sommet_prec]["position"][0]), max(position_prec_groupe, G.nodes[num_sommet_prec]["position"][1]))
+                                    else :
+                                        G.nodes[num_sommet_prec]["position"] = (min(position_prec_groupe, G.nodes[num_sommet_prec]["position"][0]), max(position_prec, G.nodes[num_sommet_prec]["position"][1]))
+                                    G.nodes[num_sommet_prec]["poids"] = G.nodes[num_sommet_prec]["position"][1] - G.nodes[num_sommet_prec]["position"][0] + 1
+                                    
+    #                                 if type_sommet_prec == 1 :
+    #                                     
+    #                                     if len(chaine) > 0 :
+    #                                         for elt in chaine[1] :
+    #                                             if elt not in G.nodes[num_sommet_prec]["pos_liaisons"] :
+    #                                                 G.nodes[num_sommet_prec]["pos_liaisons"].append(elt)
+    #                                         for elt in chaine[0] :
+    #                                             if valeur_debut not in G.nodes[elt]["pos_liaisons"] and G.nodes[elt]["type"] == 1  :
+    #                                                 G.nodes[elt]["pos_liaisons"].append(valeur_debut)
+    #                                                 G.add_edge(num_sommet_prec, elt, label="CWW", long_range=False)
+    #                                                 G.add_edge(elt, num_sommet_prec, label="CWW", long_range=False)
+    #                                     else : 
+    #                                         G.nodes[num_sommet_prec]["pos_liaisons"].append(chaine)
+                                    
+                                    if G.nodes[num_sommet_prec]["position"][0] < G.nodes[compteur_tige]["position"][0] :
+                                        if abs(G.nodes[compteur_tige]["position"][0] - G.nodes[num_sommet_prec]["position"][1]) == 1 :
+                                            if (num_sommet_prec, compteur_tige) not in G.edges() :
+                                                G.add_edge(num_sommet_prec, compteur_tige, label="B53", long_range=False)
+                                    else :
+                                        if abs(G.nodes[num_sommet_prec]["position"][0] - G.nodes[compteur_tige]["position"][1]) == 1 :
+                                            if (compteur_tige, num_sommet_prec) not in G.edges() :
+                                                G.add_edge(compteur_tige, num_sommet_prec, label="B53", long_range=False)
+                                    
+                                    compteur_tige = num_sommet_prec 
+                        position_prec_groupe = new_position    
+                        type_sommet_prec = type_sommet_actuel
+                        poids_sommet = 1  
+                        
+                        
+                        
+                         
+                            
                 else :
-                    if (type_sommet_prec == 1 or type_sommet_prec == 0) :  ## on va ajouter le sommet precedent car il est de type 0 ou 1   
-                        
+                    if poids_sommet != 1 or (type_sommet_prec == 0 or type_sommet_prec == 1 and poids_sommet == 1): ## on va ajouter le sommet precedent car il est de type 0 ou 1
                         
                         deja_vu = False
                         for k in range(min(position_prec_groupe, position_prec), max(position_prec, position_prec_groupe)+1) :
                             if k in positions_ajoutees :
                                 deja_vu = True
+                              
+                        #if position_prec not in positions_ajoutees : ## le sommet d'avant sur la sequence de type 0 ou 1 n'etait pas deja vu
+                        if deja_vu == False :
+                            if position_prec - position_prec_groupe <= 0 :
+                                if type_sommet_actuel != 1 :
+                                    ajout_sommet(G, compteur, compteur_tige, (position_prec,position_prec_groupe), type_sommet_prec, poids_sommet, "B53", positions_ajoutees, int_tige, valeur_debut, voisin_chaine = voisin_chaine)
+                                else : 
+                                    ajout_sommet(G, compteur, compteur_tige, (position_prec,position_prec_groupe), type_sommet_prec, poids_sommet, "B53", positions_ajoutees, int_tige, valeur_debut, voisin_chaine = voisin_chaine_prec)
+                
+                            else : 
+                                if type_sommet_actuel != 1 :
+                                    ajout_sommet(G, compteur, compteur_tige, (position_prec_groupe,position_prec), type_sommet_prec, poids_sommet, "B53", positions_ajoutees, int_tige, valeur_debut, voisin_chaine = voisin_chaine)
+                                else :
+                                    ajout_sommet(G, compteur, compteur_tige, (position_prec_groupe,position_prec), type_sommet_prec, poids_sommet, "B53", positions_ajoutees, int_tige, valeur_debut, voisin_chaine = voisin_chaine_prec)
+                            compteur_tige = compteur
+                            compteur = compteur+1
+                        else :
+                            if poids_sommet != 1 :
+                                #print("petit rat")
+                                num_sommet_prec = -1
+                                #print("ramou")
+                                for noeud in G.nodes() :
+                                    for k in range(min(position_prec_groupe, position_prec), max(position_prec, position_prec_groupe)+1) :
+                                        if  k <= G.nodes[noeud]["position"][1] and k >= G.nodes[noeud]["position"][0] :
+                                            num_sommet_prec = noeud ## retrouver le numero du sommet
+                                            if valeur_debut not in G.nodes[noeud]["chaine"] :
+                                                G.nodes[noeud]["chaine"].append(valeur_debut)
+                                                
+                                            for voisin in G[noeud] :
+                                                if G.nodes[voisin]["type"] == None :
+                                                    G.nodes[voisin]["chaine"].append(valeur_debut)
+                                if G.nodes[num_sommet_prec]["type"] == None :
+                                    G.nodes[num_sommet_prec]["type"] = type_sommet_prec
+                                    del(G.nodes[noeud]["chaine"][:])
+                                    G.nodes[noeud]["chaine"].append(valeur_debut)
+                                if num_sommet_prec == -1 :
+                                    print("probleme6") 
+                                    
+                                if position_prec - position_prec_groupe <= 0 :
+                                    G.nodes[num_sommet_prec]["position"] = (min(position_prec, G.nodes[num_sommet_prec]["position"][0]), max(position_prec_groupe, G.nodes[num_sommet_prec]["position"][1]))
+                                else :
+                                    G.nodes[num_sommet_prec]["position"] = (min(position_prec_groupe, G.nodes[num_sommet_prec]["position"][0]), max(position_prec, G.nodes[num_sommet_prec]["position"][1]))
+                                G.nodes[num_sommet_prec]["poids"] = G.nodes[num_sommet_prec]["position"][1] - G.nodes[num_sommet_prec]["position"][0] + 1
                                 
+    #                                 if type_sommet_prec == 1 :
+    #                                     
+    #                                     if len(chaine) > 0 :
+    #                                         for elt in chaine[1] :
+    #                                             if elt not in G.nodes[num_sommet_prec]["pos_liaisons"] :
+    #                                                 G.nodes[num_sommet_prec]["pos_liaisons"].append(elt)
+    #                                         for elt in chaine[0] :
+    #                                             if valeur_debut not in G.nodes[elt]["pos_liaisons"] and G.nodes[elt]["type"] == 1  :
+    #                                                 G.nodes[elt]["pos_liaisons"].append(valeur_debut)
+    #                                                 G.add_edge(num_sommet_prec, elt, label="CWW", long_range=False)
+    #                                                 G.add_edge(elt, num_sommet_prec, label="CWW", long_range=False)
+    #                                     else : 
+    #                                         G.nodes[num_sommet_prec]["pos_liaisons"].append(chaine)
+                                
+                                if G.nodes[num_sommet_prec]["position"][0] < G.nodes[compteur_tige]["position"][0] :
+                                    if abs(G.nodes[compteur_tige]["position"][0] - G.nodes[num_sommet_prec]["position"][1]) == 1 :
+                                        if (num_sommet_prec, compteur_tige) not in G.edges() :
+                                            G.add_edge(num_sommet_prec, compteur_tige, label="B53", long_range=False)
+                                else :
+                                    if abs(G.nodes[num_sommet_prec]["position"][0] - G.nodes[compteur_tige]["position"][1]) == 1 :
+                                        if (compteur_tige, num_sommet_prec) not in G.edges() :
+                                            G.add_edge(compteur_tige, num_sommet_prec, label="B53", long_range=False)
+                                
+                                compteur_tige = num_sommet_prec
+    #                     else :
+    #                         num_voisin_seq = -1
+    #                         #print(position_prec)
+    #                         for noeud in G.nodes() :
+    #                             if position_prec <= G.nodes[noeud]["position"][1] and position_prec >= G.nodes[noeud]["position"][0] :
+    #                                 num_voisin_seq = noeud
+    #                         if num_voisin_seq == -1 :
+    #                             print("probleme")
+    #                         #G.add_edge(num_voisin_seq, compteur_tige, label="B53")
+                    poids_sommet = 1
+                    ajout_sommet(G, compteur, compteur_tige, (new_position, new_position), type_sommet_actuel, 1, "B53", positions_ajoutees, int_tige, valeur_debut)
+                    
+                    
+                    compteur_tige = compteur
+                    compteur = compteur+1
+                    
+                    ## ajout de chacun des voisins du sommet actuel car il est de type 2 ou 3
+                    for voisin in voisins : 
+                        label_voisin = graphes[nom_cle][new_position][voisin]["label"]
+                        if label_voisin != "B53" :
+                            if voisin not in positions_ajoutees :
+                                ajout_sommet(G, compteur, compteur_tige, (voisin,voisin), None, 1, label_voisin, positions_ajoutees, int_tige, valeur_debut, long_range = graphes[nom_cle][new_position][voisin]["long_range"] )
+                                compteur = compteur+1
+                            else :
+                                num_sommet = -1
+                                #print("ramou")
+                                for noeud in G.nodes() :
+                                    if  voisin <= G.nodes[noeud]["position"][1] and voisin >= G.nodes[noeud]["position"][0] :
+                                        num_sommet = noeud ## retrouver le numero du sommet 
+                                if num_sommet == -1 :
+                                    print("probleme2")
+                                deja_fait = False
+                                for v in G[num_sommet] :
+                                    for edge in G[num_sommet][v] :
+                                        if v == compteur_tige and G[num_sommet][v][edge]["label"] != "B53" : 
+                                            deja_fait = True 
+                                if deja_fait == False :
+                                    G.add_edge(num_sommet, compteur_tige, label=label_voisin, long_range = graphes[nom_cle][new_position][voisin]["long_range"])
+                                    G.add_edge(compteur_tige, num_sommet, label=label_voisin, long_range = graphes[nom_cle][new_position][voisin]["long_range"])
+                    type_sommet_prec = type_sommet_actuel 
+    
+            else : ## le sommet actuel existe deja
+                num_sommet = -1
+                #print(G.nodes.data())
+                #print(positions_ajoutees)
+                #print(new_position)
+                for noeud in G.nodes() :
+                    if new_position <= G.nodes[noeud]["position"][1] and new_position >= G.nodes[noeud]["position"][0]  :
+                        num_sommet = noeud ## retrouver le numero du sommet 
+                        if valeur_debut not in G.nodes[noeud]["chaine"] :
+                            G.nodes[noeud]["chaine"].append(valeur_debut)
+                            
+                        for voisin in G[noeud] :
+                            if G.nodes[voisin]["type"] == None :
+                                G.nodes[voisin]["chaine"].append(valeur_debut)
+                                
+                        if G.nodes[noeud]["type"] == None :
+                            G.nodes[noeud]["type"] = type_sommet_actuel
+                            del(G.nodes[noeud]["chaine"][:])
+                            G.nodes[noeud]["chaine"].append(valeur_debut)
+                        #else :
+                        #    print("probleme")
+    #                     if G.nodes[noeud]["type"] == 0 :
+    #                         print(new_position)
+    #                         print(position_prec_groupe)
+    #                         print(num_sommet)
+    #                         print(poids_sommet)
+    #                         
+    #                         
+    #                         print(G.nodes.data())
+    #                         print("ramousnif")
+                if num_sommet == -1 :
+                    print("probleme5")
+                    #print(G.nodes.data())
+                    #print(new_position)
+                
+                                                          
+                #print(num_sommet)
+                #print(compteur_tige)
+                #print(compteur)
+    
+                if type_sommet_actuel == 0 or type_sommet_actuel == 1 :
+                    if type_sommet_actuel == type_sommet_prec  and (type_sommet_actuel == 0 or (type_sommet_actuel == 1 and ((type_sommet_voisin_prec == type_sommet_voisin and (type_sommet_voisin == 1 or type_sommet_voisin == 0)) and (chaine_sommet_voisin == chaine_sommet_voisin_prec) and (abs(voisin_chaine-voisin_chaine_prec) == 1 or voisin_chaine == -1 or voisin_chaine_prec == -1) or (type_sommet_voisin == -1 and type_sommet_voisin_prec == -1) ))): 
+                        poids_sommet += 1
+                    else :
+                        
+                        deja_vu = False
+                        for k in range(min(position_prec_groupe, position_prec), max(position_prec, position_prec_groupe)+1) :
+                            if k in positions_ajoutees :
+                                deja_vu = True
                         #if position_prec not in positions_ajoutees :
                         if deja_vu == False :
-#                             if compteur == 38 :
-#                                 print("ramousnif")
-#                                 print(chaine)
-                                
                             if position_prec - position_prec_groupe <= 0 :
                                 if type_sommet_actuel != 1 :
                                     ajout_sommet(G, compteur, compteur_tige, (position_prec,position_prec_groupe), type_sommet_prec, poids_sommet, "B53", positions_ajoutees, int_tige, valeur_debut, voisin_chaine = voisin_chaine)
@@ -317,372 +569,248 @@ def extension_tige(G, graphes, nom_cle, compteur, compteur_tige, positions_ajout
                             compteur_tige = compteur
                             compteur = compteur+1
                         else : ## le sommet d'avant existe deja mais il est peut etre en groupe maintenant
+    #                         print("petit rat")
+    #                         print(new_position)
                             
                             if poids_sommet != 1 :
-                                #print("petit rat")
                                 num_sommet_prec = -1
-                                #print("ramou")
+                                    #print("ramou")
                                 for noeud in G.nodes() :
                                     for k in range(min(position_prec_groupe, position_prec), max(position_prec, position_prec_groupe)+1) :
                                         if  k <= G.nodes[noeud]["position"][1] and k >= G.nodes[noeud]["position"][0] :
-                                            num_sommet_prec = noeud ## retrouver le numero du sommet
+                                            num_sommet_prec = noeud ## retrouver le numero du sommet 
                                             if valeur_debut not in G.nodes[noeud]["chaine"] :
                                                 G.nodes[noeud]["chaine"].append(valeur_debut)
+                                                
+                                            for voisin in G[noeud] :
+                                                if G.nodes[voisin]["type"] == None :
+                                                    G.nodes[voisin]["chaine"].append(valeur_debut)
                                 if G.nodes[num_sommet_prec]["type"] == None :
                                     G.nodes[num_sommet_prec]["type"] = type_sommet_prec
                                     del(G.nodes[noeud]["chaine"][:])
                                     G.nodes[noeud]["chaine"].append(valeur_debut)
                                 if num_sommet_prec == -1 :
-                                    print("probleme6") 
-                                    
+                                    print("probleme7") 
+                                        
                                 if position_prec - position_prec_groupe <= 0 :
                                     G.nodes[num_sommet_prec]["position"] = (min(position_prec, G.nodes[num_sommet_prec]["position"][0]), max(position_prec_groupe, G.nodes[num_sommet_prec]["position"][1]))
                                 else :
                                     G.nodes[num_sommet_prec]["position"] = (min(position_prec_groupe, G.nodes[num_sommet_prec]["position"][0]), max(position_prec, G.nodes[num_sommet_prec]["position"][1]))
                                 G.nodes[num_sommet_prec]["poids"] = G.nodes[num_sommet_prec]["position"][1] - G.nodes[num_sommet_prec]["position"][0] + 1
                                 
-#                                 if type_sommet_prec == 1 :
-#                                     
-#                                     if len(chaine) > 0 :
-#                                         for elt in chaine[1] :
-#                                             if elt not in G.nodes[num_sommet_prec]["pos_liaisons"] :
-#                                                 G.nodes[num_sommet_prec]["pos_liaisons"].append(elt)
-#                                         for elt in chaine[0] :
-#                                             if valeur_debut not in G.nodes[elt]["pos_liaisons"] and G.nodes[elt]["type"] == 1  :
-#                                                 G.nodes[elt]["pos_liaisons"].append(valeur_debut)
-#                                                 G.add_edge(num_sommet_prec, elt, label="CWW", long_range=False)
-#                                                 G.add_edge(elt, num_sommet_prec, label="CWW", long_range=False)
-#                                     else : 
-#                                         G.nodes[num_sommet_prec]["pos_liaisons"].append(chaine)
+#                                 if nom_cle == ('2XD0', 'V') :
+#                                     print('ramou')
+#                                     print(compteur_tige)
+#                                     print(num_sommet)
+#                                     print(num_sommet_prec)
+#                                     print(G.edges.data())
                                 
-                                compteur_tige = num_sommet_prec 
-                    position_prec_groupe = new_position    
-                    type_sommet_prec = type_sommet_actuel
-                    poids_sommet = 1  
-                    
-                    
-                    
-                     
+                                if compteur_tige != num_sommet_prec :
+                                    if G.nodes[num_sommet_prec]["position"][0] < G.nodes[compteur_tige]["position"][0] :
+                                        if abs(G.nodes[compteur_tige]["position"][0] - G.nodes[num_sommet_prec]["position"][1]) == 1 :
+                                            if (num_sommet_prec, compteur_tige) not in G.edges() :
+                                                G.add_edge(num_sommet_prec, compteur_tige, label="B53", long_range=False)
+                                    else :
+                                        if abs(G.nodes[num_sommet_prec]["position"][0] - G.nodes[compteur_tige]["position"][1]) == 1 :
+                                            if (compteur_tige, num_sommet_prec) not in G.edges() :
+                                                G.add_edge(compteur_tige, num_sommet_prec, label="B53", long_range=False)
+                                
+#                                 if nom_cle == ('2XD0', 'V') :
+#                                     print('ramou')
+#                                     print(compteur_tige)
+#                                     print(num_sommet)
+#                                     print(num_sommet_prec)
+#                                     print(G.edges.data())
+                                
+                                compteur_tige = num_sommet_prec
+                                
+    #                             if type_sommet_prec == 1 :
+    #                                 if len(chaine) > 0 :
+    #                                     for elt in chaine[1] :
+    #                                         if elt not in G.nodes[num_sommet_prec]["pos_liaisons"] :
+    #                                             G.nodes[num_sommet_prec]["pos_liaisons"].append(elt)
+    #                                     for elt in chaine[0] :
+    #                                         if valeur_debut not in G.nodes[elt]["pos_liaisons"] and G.nodes[elt]["type"] == 1  :
+    #                                             G.nodes[elt]["pos_liaisons"].append(valeur_debut)
+    #                                             G.add_edge(num_sommet_prec, elt, label="CWW", long_range=False)
+    #                                             G.add_edge(elt, num_sommet_prec, label="CWW", long_range=False)
+    #                                 else : 
+    #                                     G.nodes[num_sommet_prec]["pos_liaisons"].append(chaine)
+                                
+                        if G.nodes[num_sommet]["position"][0] < G.nodes[compteur_tige]["position"][0] :
+                            if abs(G.nodes[compteur_tige]["position"][0] - G.nodes[num_sommet]["position"][1]) == 1 :
+                                if (num_sommet, compteur_tige) not in G.edges() :
+                                    G.add_edge(num_sommet, compteur_tige, label="B53", long_range=False)
+                        else :
+                            if abs(G.nodes[num_sommet]["position"][0] - G.nodes[compteur_tige]["position"][1]) == 1 :
+                                if (compteur_tige, num_sommet) not in G.edges() :
+                                    G.add_edge(compteur_tige, num_sommet, label="B53", long_range=False)
+                        compteur_tige = num_sommet
+                            
+    #                     if position_prec - position_prec_groupe <= 0 :
+    #                         G.nodes[num_sommet]["position"] = (position_prec, position_prec_groupe)
+    #                     else :
+    #                         G.nodes[num_sommet]["position"] = (position_prec_groupe, position_prec)
+                            
+                        position_prec_groupe = new_position                       
+                        type_sommet_prec = type_sommet_actuel
+                        poids_sommet = 1
+    
                         
-            else :
-                if poids_sommet != 1 or (type_sommet_prec == 0 or type_sommet_prec == 1 and poids_sommet == 1): ## on va ajouter le sommet precedent car il est de type 0 ou 1
-                    
-                    deja_vu = False
-                    for k in range(min(position_prec_groupe, position_prec), max(position_prec, position_prec_groupe)+1) :
-                        if k in positions_ajoutees :
-                            deja_vu = True
-                          
-                    #if position_prec not in positions_ajoutees : ## le sommet d'avant sur la sequence de type 0 ou 1 n'etait pas deja vu
-                    if deja_vu == False :
-                        if position_prec - position_prec_groupe <= 0 :
-                            if type_sommet_actuel != 1 :
-                                ajout_sommet(G, compteur, compteur_tige, (position_prec,position_prec_groupe), type_sommet_prec, poids_sommet, "B53", positions_ajoutees, int_tige, valeur_debut, voisin_chaine = voisin_chaine)
+                else :
+    
+                    if poids_sommet != 1 or (type_sommet_prec == 0 or type_sommet_prec == 1 and poids_sommet == 1):                        
+                        deja_vu = False
+                        for k in range(min(position_prec_groupe, position_prec), max(position_prec, position_prec_groupe)+1) :
+                            if k in positions_ajoutees :
+                                deja_vu = True
+                        
+                        #if position_prec not in positions_ajoutees : ## le sommet d'avant sur la sequence de type 0 ou 1 n'etait pas deja vu
+                        if deja_vu == False :
+    #                         if compteur == 11 :
+    #                             print("ramou")
+    #                             print(voisin_chaine_prec)
+                            if position_prec - position_prec_groupe <= 0 :
+                                if type_sommet_actuel != 1 :
+                                    ajout_sommet(G, compteur, compteur_tige, (position_prec,position_prec_groupe), type_sommet_prec, poids_sommet, "B53", positions_ajoutees, int_tige, valeur_debut, voisin_chaine = voisin_chaine)
+                                else : 
+                                    ajout_sommet(G, compteur, compteur_tige, (position_prec,position_prec_groupe), type_sommet_prec, poids_sommet, "B53", positions_ajoutees, int_tige, valeur_debut, voisin_chaine = voisin_chaine_prec)
+                
                             else : 
-                                ajout_sommet(G, compteur, compteur_tige, (position_prec,position_prec_groupe), type_sommet_prec, poids_sommet, "B53", positions_ajoutees, int_tige, valeur_debut, voisin_chaine = voisin_chaine_prec)
-            
-                        else : 
-                            if type_sommet_actuel != 1 :
-                                ajout_sommet(G, compteur, compteur_tige, (position_prec_groupe,position_prec), type_sommet_prec, poids_sommet, "B53", positions_ajoutees, int_tige, valeur_debut, voisin_chaine = voisin_chaine)
-                            else :
-                                ajout_sommet(G, compteur, compteur_tige, (position_prec_groupe,position_prec), type_sommet_prec, poids_sommet, "B53", positions_ajoutees, int_tige, valeur_debut, voisin_chaine = voisin_chaine_prec)
-                        compteur_tige = compteur
-                        compteur = compteur+1
-                    
-#                     else :
-#                         num_voisin_seq = -1
-#                         #print(position_prec)
-#                         for noeud in G.nodes() :
-#                             if position_prec <= G.nodes[noeud]["position"][1] and position_prec >= G.nodes[noeud]["position"][0] :
-#                                 num_voisin_seq = noeud
-#                         if num_voisin_seq == -1 :
-#                             print("probleme")
-#                         #G.add_edge(num_voisin_seq, compteur_tige, label="B53")
-                poids_sommet = 1
-                ajout_sommet(G, compteur, compteur_tige, (new_position, new_position), type_sommet_actuel, 1, "B53", positions_ajoutees, int_tige, valeur_debut)
-                
-                
-                compteur_tige = compteur
-                compteur = compteur+1
-                
-                ## ajout de chacun des voisins du sommet actuel car il est de type 2 ou 3
-                for voisin in voisins : 
-                    label_voisin = graphes[nom_cle][new_position][voisin]["label"]
-                    if label_voisin != "B53" :
-                        if voisin not in positions_ajoutees :
-                            ajout_sommet(G, compteur, compteur_tige, (voisin,voisin), None, 1, label_voisin, positions_ajoutees, int_tige, valeur_debut, long_range = graphes[nom_cle][new_position][voisin]["long_range"] )
+                                if type_sommet_actuel != 1 :
+                                    ajout_sommet(G, compteur, compteur_tige, (position_prec_groupe,position_prec), type_sommet_prec, poids_sommet, "B53", positions_ajoutees, int_tige, valeur_debut, voisin_chaine = voisin_chaine)
+                                else :
+                                    ajout_sommet(G, compteur, compteur_tige, (position_prec_groupe,position_prec), type_sommet_prec, poids_sommet, "B53", positions_ajoutees, int_tige, valeur_debut, voisin_chaine = voisin_chaine_prec)
+         
+                            compteur_tige = compteur
                             compteur = compteur+1
                         else :
-                            num_sommet = -1
-                            #print("ramou")
-                            for noeud in G.nodes() :
-                                if  voisin <= G.nodes[noeud]["position"][1] and voisin >= G.nodes[noeud]["position"][0] :
-                                    num_sommet = noeud ## retrouver le numero du sommet 
-                            if num_sommet == -1 :
-                                print("probleme2")
-                            deja_fait = False
-                            for v in G[num_sommet] :
-                                for edge in G[num_sommet][v] :
-                                    if v == compteur_tige and G[num_sommet][v][edge]["label"] != "B53" : 
-                                        deja_fait = True 
-                            if deja_fait == False :
-                                G.add_edge(num_sommet, compteur_tige, label=label_voisin, long_range = graphes[nom_cle][new_position][voisin]["long_range"])
-                                G.add_edge(compteur_tige, num_sommet, label=label_voisin, long_range = graphes[nom_cle][new_position][voisin]["long_range"])
-                type_sommet_prec = type_sommet_actuel 
-
-        else : ## le sommet actuel existe deja
-            num_sommet = -1
-            #print(G.nodes.data())
-            #print(positions_ajoutees)
-            #print(new_position)
-            for noeud in G.nodes() :
-                if new_position <= G.nodes[noeud]["position"][1] and new_position >= G.nodes[noeud]["position"][0]  :
-                    num_sommet = noeud ## retrouver le numero du sommet 
-                    if valeur_debut not in G.nodes[noeud]["chaine"] :
-                        G.nodes[noeud]["chaine"].append(valeur_debut)
-                    if G.nodes[noeud]["type"] == None :
-                        G.nodes[noeud]["type"] = type_sommet_actuel
-                        del(G.nodes[noeud]["chaine"][:])
-                        G.nodes[noeud]["chaine"].append(valeur_debut)
-                    #else :
-                    #    print("probleme")
-#                     if G.nodes[noeud]["type"] == 0 :
-#                         print(new_position)
-#                         print(position_prec_groupe)
-#                         print(num_sommet)
-#                         print(poids_sommet)
-#                         
-#                         
-#                         print(G.nodes.data())
-#                         print("ramousnif")
-            if num_sommet == -1 :
-                print("probleme5")
-                #print(G.nodes.data())
-                #print(new_position)
-            
-                                                      
-            #print(num_sommet)
-            #print(compteur_tige)
-            #print(compteur)
-
-            if type_sommet_actuel == 0 or type_sommet_actuel == 1 :
-                if type_sommet_actuel == type_sommet_prec  and (type_sommet_actuel == 0 or (type_sommet_actuel == 1 and ((type_sommet_voisin_prec == type_sommet_voisin and (type_sommet_voisin == 1 or type_sommet_voisin == 0)) and (chaine_sommet_voisin == chaine_sommet_voisin_prec) or type_sommet_voisin_prec == None ) )): 
-                    poids_sommet += 1
-                else :
-                    
-                    deja_vu = False
-                    for k in range(min(position_prec_groupe, position_prec), max(position_prec, position_prec_groupe)+1) :
-                        if k in positions_ajoutees :
-                            deja_vu = True
-                    #if position_prec not in positions_ajoutees :
-                    if deja_vu == False :
-                        if position_prec - position_prec_groupe <= 0 :
-                            if type_sommet_actuel != 1 :
-                                ajout_sommet(G, compteur, compteur_tige, (position_prec,position_prec_groupe), type_sommet_prec, poids_sommet, "B53", positions_ajoutees, int_tige, valeur_debut, voisin_chaine = voisin_chaine)
-                            else : 
-                                ajout_sommet(G, compteur, compteur_tige, (position_prec,position_prec_groupe), type_sommet_prec, poids_sommet, "B53", positions_ajoutees, int_tige, valeur_debut, voisin_chaine = voisin_chaine_prec)
-            
-                        else : 
-                            if type_sommet_actuel != 1 :
-                                ajout_sommet(G, compteur, compteur_tige, (position_prec_groupe,position_prec), type_sommet_prec, poids_sommet, "B53", positions_ajoutees, int_tige, valeur_debut, voisin_chaine = voisin_chaine)
-                            else :
-                                ajout_sommet(G, compteur, compteur_tige, (position_prec_groupe,position_prec), type_sommet_prec, poids_sommet, "B53", positions_ajoutees, int_tige, valeur_debut, voisin_chaine = voisin_chaine_prec)
-                        compteur_tige = compteur
-                        compteur = compteur+1
-                    else : ## le sommet d'avant existe deja mais il est peut etre en groupe maintenant
-#                         print("petit rat")
-#                         print(new_position)
-                        if poids_sommet != 1 :
-                            num_sommet_prec = -1
-                                #print("ramou")
+                            num_voisin_seq = -1
+                           #print(position_prec)
                             for noeud in G.nodes() :
                                 for k in range(min(position_prec_groupe, position_prec), max(position_prec, position_prec_groupe)+1) :
                                     if  k <= G.nodes[noeud]["position"][1] and k >= G.nodes[noeud]["position"][0] :
-                                        num_sommet_prec = noeud ## retrouver le numero du sommet 
+                                        num_voisin_seq = noeud
                                         if valeur_debut not in G.nodes[noeud]["chaine"] :
                                             G.nodes[noeud]["chaine"].append(valeur_debut)
-                            if G.nodes[num_sommet_prec]["type"] == None :
-                                G.nodes[num_sommet_prec]["type"] = type_sommet_prec
-                                del(G.nodes[noeud]["chaine"][:])
-                                G.nodes[noeud]["chaine"].append(valeur_debut)
-                            if num_sommet_prec == -1 :
-                                print("probleme7") 
-                                    
+                                            
+                                        for voisin in G[noeud] :
+                                            if G.nodes[voisin]["type"] == None :
+                                                G.nodes[voisin]["chaine"].append(valeur_debut)
+                                        
+                            if num_voisin_seq == -1 :
+                                print("probleme3")
+                                #print(new_position)
+                                #print(position_prec)
+                                #print(G.nodes.data())
+                            #G.add_edge(num_voisin_seq, compteur_tige, label="B53")
+                            
                             if position_prec - position_prec_groupe <= 0 :
-                                G.nodes[num_sommet_prec]["position"] = (min(position_prec, G.nodes[num_sommet_prec]["position"][0]), max(position_prec_groupe, G.nodes[num_sommet_prec]["position"][1]))
+                                G.nodes[num_voisin_seq]["position"] = (min(position_prec, G.nodes[num_voisin_seq]["position"][0]), max(position_prec_groupe, G.nodes[num_voisin_seq]["position"][1]))
                             else :
-                                G.nodes[num_sommet_prec]["position"] = (min(position_prec_groupe, G.nodes[num_sommet_prec]["position"][0]), max(position_prec, G.nodes[num_sommet_prec]["position"][1]))
-                            G.nodes[num_sommet_prec]["poids"] = G.nodes[num_sommet_prec]["position"][1] - G.nodes[num_sommet_prec]["position"][0] + 1
+                                G.nodes[num_voisin_seq]["position"] = (min(position_prec_groupe, G.nodes[num_voisin_seq]["position"][0]), max(position_prec, G.nodes[num_voisin_seq]["position"][1]))
+                            G.nodes[num_voisin_seq]["poids"] = G.nodes[num_voisin_seq]["position"][1] - G.nodes[num_voisin_seq]["position"][0] +1
+    #                 
+                            if G.nodes[num_voisin_seq]["position"][0] < G.nodes[compteur_tige]["position"][0] :
+                                if abs(G.nodes[compteur_tige]["position"][0] - G.nodes[num_voisin_seq]["position"][1]) == 1 :
+                                    if (num_voisin_seq, compteur_tige) not in G.edges() :
+                                        G.add_edge(num_voisin_seq, compteur_tige, label="B53", long_range=False)
+                            else :
+                                if abs(G.nodes[num_voisin_seq]["position"][0] - G.nodes[compteur_tige]["position"][1]) == 1 :
+                                    if (compteur_tige, num_voisin_seq) not in G.edges() :
+                                        G.add_edge(compteur_tige, num_voisin_seq, label="B53", long_range=False)
                             
-#                             if type_sommet_prec == 1 :
-#                                 if len(chaine) > 0 :
-#                                     for elt in chaine[1] :
-#                                         if elt not in G.nodes[num_sommet_prec]["pos_liaisons"] :
-#                                             G.nodes[num_sommet_prec]["pos_liaisons"].append(elt)
-#                                     for elt in chaine[0] :
-#                                         if valeur_debut not in G.nodes[elt]["pos_liaisons"] and G.nodes[elt]["type"] == 1  :
-#                                             G.nodes[elt]["pos_liaisons"].append(valeur_debut)
-#                                             G.add_edge(num_sommet_prec, elt, label="CWW", long_range=False)
-#                                             G.add_edge(elt, num_sommet_prec, label="CWW", long_range=False)
-#                                 else : 
-#                                     G.nodes[num_sommet_prec]["pos_liaisons"].append(chaine)
-                            
-                    if int_tige == 1 :
-                        if valeur_debut == 3 or valeur_debut == 4 :
-                            G.add_edge(compteur_tige, num_sommet, label="B53", long_range=False)
-                        else :
-                            G.add_edge(num_sommet, compteur_tige, label="B53", long_range=False)
-                    else :
-                        if valeur_debut == 3 or valeur_debut == 4 :
-                            G.add_edge(num_sommet, compteur_tige, label="B53", long_range=False)
-                        else :
-                            G.add_edge(compteur_tige, num_sommet, label="B53", long_range=False)
-                    compteur_tige = num_sommet
+                            compteur_tige = num_voisin_seq
+    #                         if type_sommet_prec == 1 :
+    #                             if len(chaine) > 0 :
+    #                                 for elt in chaine[1] :
+    #                                     if elt not in G.nodes[num_voisin_seq]["pos_liaisons"] :
+    #                                         G.nodes[num_voisin_seq]["pos_liaisons"].append(elt)
+    #                                 for elt in chaine[0] :
+    #                                     if valeur_debut not in G.nodes[elt]["pos_liaisons"] and G.nodes[elt]["type"] == 1 :
+    #                                         G.nodes[elt]["pos_liaisons"].append(valeur_debut)
+    #                                         G.add_edge(num_voisin_seq, elt, label="CWW", long_range=False)
+    #                                         G.add_edge(elt, num_voisin_seq, label="CWW", long_range=False)
+    #                             else : 
+    #                                 G.nodes[num_voisin_seq]["pos_liaisons"].append(chaine)
                         
-#                     if position_prec - position_prec_groupe <= 0 :
-#                         G.nodes[num_sommet]["position"] = (position_prec, position_prec_groupe)
-#                     else :
-#                         G.nodes[num_sommet]["position"] = (position_prec_groupe, position_prec)
-                        
-                    position_prec_groupe = new_position                       
+                    #if nom_cle == ('1FJG', 'A') :
+                    #    print(new_position)
+                    #    print(num_sommet)
+                    #    print(compteur_tige)
+                    
+                    if i > 0 :
+                        if G.nodes[num_sommet]["position"][0] < G.nodes[compteur_tige]["position"][0] :
+                            if abs(G.nodes[compteur_tige]["position"][0] - G.nodes[num_sommet]["position"][1]) == 1 :
+                                if (num_sommet, compteur_tige) not in G.edges() :
+                                    G.add_edge(num_sommet, compteur_tige, label="B53", long_range=False)
+                        else :
+                            if abs(G.nodes[num_sommet]["position"][0] - G.nodes[compteur_tige]["position"][1]) == 1 :
+                                if (compteur_tige, num_sommet) not in G.edges() :
+                                    G.add_edge(compteur_tige, num_sommet, label="B53", long_range=False)
+                        G.nodes[num_sommet]["poids"] = 1
+                        compteur_tige = num_sommet
+                    
+                    #if nom_cle == ('1FJG', 'A') :
+                    #    print(new_position)
+                    #    print(compteur_tige)
+                    #    print(G.nodes.data())
+                    
+                    ## ajout de chacun des voisins du sommet actuel car il est de type 2 ou 3
+                    for voisin in voisins :
+                        label_voisin = graphes[nom_cle][new_position][voisin]["label"]
+                        if label_voisin != "B53" :
+                            if voisin not in positions_ajoutees :
+                                ajout_sommet(G, compteur, compteur_tige, (voisin,voisin), None, 1, label_voisin, positions_ajoutees, int_tige, valeur_debut, long_range=graphes[nom_cle][new_position][voisin]["long_range"])
+                                compteur = compteur+1
+                            else :
+                                num_sommet = -1
+                                #print(nom_cle)
+                                #print(compteur_tige)
+                                #print(G.nodes.data())
+                                for noeud in G.nodes() :
+    #                                 print(G.nodes[noeud])
+                                    if voisin <= G.nodes[noeud]["position"][1] and voisin >= G.nodes[noeud]["position"][0] :
+                                        num_sommet = noeud ## retrouver le numero du sommet  
+                                if num_sommet == -1 :
+                                    print("probleme4")
+                                deja_fait = False
+                                for v in G[num_sommet] :
+                                    for edge in G[num_sommet][v] :
+                                        if v == compteur_tige and G[num_sommet][v][edge]["label"] != "B53" : 
+                                            deja_fait = True 
+                                if deja_fait == False :
+                                    G.add_edge(num_sommet, compteur_tige, label=label_voisin, long_range=graphes[nom_cle][new_position][voisin]["long_range"])
+                                    G.add_edge(compteur_tige, num_sommet, label=label_voisin, long_range=graphes[nom_cle][new_position][voisin]["long_range"])
                     type_sommet_prec = type_sommet_actuel
-                    poids_sommet = 1
-
-                    
-            else :
-
-                if poids_sommet != 1 or (type_sommet_prec == 0 or type_sommet_prec == 1 and poids_sommet == 1):
-                    deja_vu = False
-                    for k in range(min(position_prec_groupe, position_prec), max(position_prec, position_prec_groupe)+1) :
-                        if k in positions_ajoutees :
-                            deja_vu = True
-                    
-                    #if position_prec not in positions_ajoutees : ## le sommet d'avant sur la sequence de type 0 ou 1 n'etait pas deja vu
-                    if deja_vu == False :
-#                         if compteur == 11 :
-#                             print("ramou")
-#                             print(voisin_chaine_prec)
-                        if position_prec - position_prec_groupe <= 0 :
-                            if type_sommet_actuel != 1 :
-                                ajout_sommet(G, compteur, compteur_tige, (position_prec,position_prec_groupe), type_sommet_prec, poids_sommet, "B53", positions_ajoutees, int_tige, valeur_debut, voisin_chaine = voisin_chaine)
-                            else : 
-                                ajout_sommet(G, compteur, compteur_tige, (position_prec,position_prec_groupe), type_sommet_prec, poids_sommet, "B53", positions_ajoutees, int_tige, valeur_debut, voisin_chaine = voisin_chaine_prec)
+                    poids_sommet = 1 
             
-                        else : 
-                            if type_sommet_actuel != 1 :
-                                ajout_sommet(G, compteur, compteur_tige, (position_prec_groupe,position_prec), type_sommet_prec, poids_sommet, "B53", positions_ajoutees, int_tige, valeur_debut, voisin_chaine = voisin_chaine)
-                            else :
-                                ajout_sommet(G, compteur, compteur_tige, (position_prec_groupe,position_prec), type_sommet_prec, poids_sommet, "B53", positions_ajoutees, int_tige, valeur_debut, voisin_chaine = voisin_chaine_prec)
-     
-                        compteur_tige = compteur
-                        compteur = compteur+1
-                    else :
-                        num_voisin_seq = -1
-                       #print(position_prec)
-                        for noeud in G.nodes() :
-                            for k in range(min(position_prec_groupe, position_prec), max(position_prec, position_prec_groupe)+1) :
-                                if  k <= G.nodes[noeud]["position"][1] and k >= G.nodes[noeud]["position"][0] :
-                                    num_voisin_seq = noeud
-                                    if valeur_debut not in G.nodes[noeud]["chaine"] :
-                                        G.nodes[noeud]["chaine"].append(valeur_debut)
-                        if num_voisin_seq == -1 :
-                            print("probleme3")
-                            #print(new_position)
-                            #print(position_prec)
-                            #print(G.nodes.data())
-                        #G.add_edge(num_voisin_seq, compteur_tige, label="B53")
-                        
-                        if position_prec - position_prec_groupe <= 0 :
-                            G.nodes[num_voisin_seq]["position"] = (min(position_prec, G.nodes[num_voisin_seq]["position"][0]), max(position_prec_groupe, G.nodes[num_voisin_seq]["position"][1]))
-                        else :
-                            G.nodes[num_voisin_seq]["position"] = (min(position_prec_groupe, G.nodes[num_voisin_seq]["position"][0]), max(position_prec, G.nodes[num_voisin_seq]["position"][1]))
-                        G.nodes[num_voisin_seq]["poids"] = G.nodes[num_voisin_seq]["position"][1] - G.nodes[num_voisin_seq]["position"][0] +1
-#                 
-#                         if type_sommet_prec == 1 :
-#                             if len(chaine) > 0 :
-#                                 for elt in chaine[1] :
-#                                     if elt not in G.nodes[num_voisin_seq]["pos_liaisons"] :
-#                                         G.nodes[num_voisin_seq]["pos_liaisons"].append(elt)
-#                                 for elt in chaine[0] :
-#                                     if valeur_debut not in G.nodes[elt]["pos_liaisons"] and G.nodes[elt]["type"] == 1 :
-#                                         G.nodes[elt]["pos_liaisons"].append(valeur_debut)
-#                                         G.add_edge(num_voisin_seq, elt, label="CWW", long_range=False)
-#                                         G.add_edge(elt, num_voisin_seq, label="CWW", long_range=False)
-#                             else : 
-#                                 G.nodes[num_voisin_seq]["pos_liaisons"].append(chaine)
-                    
-                #if nom_cle == ('1FJG', 'A') :
-                #    print(new_position)
-                #    print(num_sommet)
-                #    print(compteur_tige)
-                
-                if i > 0 :
-                    if int_tige == 1 :
-                        if valeur_debut == 3 or valeur_debut == 4 :
-                            G.add_edge(compteur_tige, num_sommet, label="B53", long_range=False)
-                        else :
-                            G.add_edge(num_sommet, compteur_tige, label="B53", long_range=False)
-                    else :
-                        if valeur_debut == 3 or valeur_debut == 4 :
-                            G.add_edge(num_sommet, compteur_tige, label="B53", long_range=False)
-                        else :
-                            G.add_edge(compteur_tige, num_sommet, label="B53", long_range=False)
-                    G.nodes[num_sommet]["poids"] = 1
-                    compteur_tige = num_sommet
-                
-                #if nom_cle == ('1FJG', 'A') :
-                #    print(new_position)
-                #    print(compteur_tige)
-                #    print(G.nodes.data())
-                
-                ## ajout de chacun des voisins du sommet actuel car il est de type 2 ou 3
-                for voisin in voisins :
-                    label_voisin = graphes[nom_cle][new_position][voisin]["label"]
-                    if label_voisin != "B53" :
-                        if voisin not in positions_ajoutees :
-                            ajout_sommet(G, compteur, compteur_tige, (voisin,voisin), None, 1, label_voisin, positions_ajoutees, int_tige, valeur_debut, long_range=graphes[nom_cle][new_position][voisin]["long_range"])
-                            compteur = compteur+1
-                        else :
-                            num_sommet = -1
-                            #print(nom_cle)
-                            #print(compteur_tige)
-                            #print(G.nodes.data())
-                            for noeud in G.nodes() :
-#                                 print(G.nodes[noeud])
-                                if voisin <= G.nodes[noeud]["position"][1] and voisin >= G.nodes[noeud]["position"][0] :
-                                    num_sommet = noeud ## retrouver le numero du sommet  
-                            if num_sommet == -1 :
-                                print("probleme4")
-                            deja_fait = False
-                            for v in G[num_sommet] :
-                                for edge in G[num_sommet][v] :
-                                    if v == compteur_tige and G[num_sommet][v][edge]["label"] != "B53" : 
-                                        deja_fait = True 
-                            if deja_fait == False :
-                                G.add_edge(num_sommet, compteur_tige, label=label_voisin, long_range=graphes[nom_cle][new_position][voisin]["long_range"])
-                                G.add_edge(compteur_tige, num_sommet, label=label_voisin, long_range=graphes[nom_cle][new_position][voisin]["long_range"])
-                type_sommet_prec = type_sommet_actuel
-                poids_sommet = 1 
-        
-        
-        if voisin_dans_chaine == False :
-            chaine_sommet_voisin = -1
-            chaine_sommet_voisin_prec = -1
-            type_sommet_voisin_prec = None
-            type_sommet_voisin = None   
-            voisin_chaine_prec = -1
-            voisin_chaine = -1       
-        i = i+1
+            
+            if voisin_dans_chaine == False :
+                chaine_sommet_voisin = -1
+                chaine_sommet_voisin_prec = -1
+                type_sommet_voisin_prec = -1
+                type_sommet_voisin = -1   
+                voisin_chaine_prec = -1
+                voisin_chaine = -1       
+            i = i+1
         
         
         
-        position_prec = new_position
-        if valeur_debut == 2 or valeur_debut == 1 :
-            new_position = G.node[valeur_debut]["position"][0]-i*int_tige
-        else : #normalement 4 ou 3
-            new_position = G.node[valeur_debut]["position"][0]+i*int_tige
+            position_prec = new_position
+            if valeur_debut == 2 or valeur_debut == 1 :
+                new_position = G.node[valeur_debut]["position"][0]-i*int_tige
+            else : #normalement 4 ou 3
+                new_position = G.node[valeur_debut]["position"][0]+i*int_tige
+        else :
+            break
             
 #     print(chaine)
     if poids_sommet != 1 or (type_sommet_actuel == 0 or type_sommet_actuel == 1 and poids_sommet == 1):
+        if nom_cle == ('2XD0', 'V') :
+            print("petit rat")
+            print(compteur)
+            print(G.edges.data())
         deja_vu = False
         for k in range(min(position_prec_groupe, position_prec), max(position_prec, position_prec_groupe)+1) :
             if k in positions_ajoutees :
@@ -704,16 +832,18 @@ def extension_tige(G, graphes, nom_cle, compteur, compteur_tige, positions_ajout
                         num_sommet = noeud
                         if valeur_debut not in G.nodes[noeud]["chaine"] :
                             G.nodes[noeud]["chaine"].append(valeur_debut)
-            if int_tige == 1 :
-                if valeur_debut == 3 or valeur_debut == 4 :
-                    G.add_edge(compteur_tige, num_sommet, label="B53", long_range=False)
-                else :
-                    G.add_edge(num_sommet, compteur_tige, label="B53", long_range=False)
+                            
+                        for voisin in G[noeud] :
+                            if G.nodes[voisin]["type"] == None :
+                                G.nodes[voisin]["chaine"].append(valeur_debut)
+            if G.nodes[num_sommet]["position"][0] < G.nodes[compteur_tige]["position"][0] :
+                if abs(G.nodes[compteur_tige]["position"][0] - G.nodes[num_sommet]["position"][1]) == 1 :
+                    if (num_sommet, compteur_tige) not in G.edges() :
+                        G.add_edge(num_sommet, compteur_tige, label="B53", long_range=False)
             else :
-                if valeur_debut == 3 or valeur_debut == 4 :
-                    G.add_edge(num_sommet, compteur_tige, label="B53", long_range=False)
-                else :
-                    G.add_edge(compteur_tige, num_sommet, label="B53", long_range=False)
+                if abs(G.nodes[num_sommet]["position"][0] - G.nodes[compteur_tige]["position"][1]) == 1 :
+                    if (compteur_tige, num_sommet) not in G.edges() :
+                        G.add_edge(compteur_tige, num_sommet, label="B53", long_range=False)
                 
             if position_prec - position_prec_groupe <= 0 :
 #                 print(num_sommet)
@@ -741,6 +871,25 @@ def extension_tige(G, graphes, nom_cle, compteur, compteur_tige, positions_ajout
     return G
 
 
+def ajout_aretes_artificielles(G):
+    a_ajoute = []
+    for noeud, label in G.nodes(data="type") :
+        if label == 0 or label == 1 :
+            a_voisin = False
+            for voisin in G[noeud] :
+                for edge in G[noeud][voisin] :
+                    if G[noeud][voisin][edge]["label"] != 'B53' :
+                        a_voisin = True
+            if a_voisin == False :
+                a_ajoute.append(noeud)
+    for elt in a_ajoute :
+        compteur = G.number_of_nodes()+1
+        G.add_node(compteur, position=(-1,-1), type=-1, poids=G.nodes[elt]["poids"], chaine=G.nodes[elt]["chaine"])
+        G.add_edge(compteur, elt, label='0', long_range=None)
+        G.add_edge(elt, compteur, label='0', long_range=None)
+    
+    return G
+                
 with open("fichiers_pickle/a-minor_test2.pickle", 'rb') as fichier_pickle :
     mon_depickler = pickle.Unpickler(fichier_pickle)
     tab_aminor = mon_depickler.load()
@@ -775,7 +924,7 @@ with open("fichiers_pickle/a-minor_test2.pickle", 'rb') as fichier_pickle :
                     i = 1
                     positions_ajoutees = []
                     for elt in occ["a_minor"] :
-                        G.add_node(i, position = (elt,elt), type = i+10, poids=1, chaine=[i], pos_liaisons = [])
+                        G.add_node(i, position = (elt,elt), type = i+10, poids=1, chaine=[i])
                         positions_ajoutees.append(elt)
                         
                         i = i+1
@@ -888,8 +1037,13 @@ with open("fichiers_pickle/a-minor_test2.pickle", 'rb') as fichier_pickle :
                      
                     G = extension_tige(G, graphes, nom_cle, compteur, compteur_tige, positions_ajoutees, int_tige) 
                      
-                     
-                     
+                    
+                    G = ajout_aretes_artificielles(G)
+                    
+                    #print(occ)
+#                     print(G.nodes.data())
+#                     print(G.edges.data())
+                    
 #                     compteur = G.number_of_nodes()+1
 #                     compteur_tige = 1
                     #G = tige(G, graphes, nom_cle, compteur, compteur_tige, positions_ajoutees) 
@@ -904,7 +1058,7 @@ with open("fichiers_pickle/a-minor_test2.pickle", 'rb') as fichier_pickle :
                         fichier.write(str((u,v)) + " " + str(data)+"\n")
                     
 # 
-                    with open("graphes_extension/fichier_{}.pickle".format(str(occ["num_PDB"]) + "_" + str(occ["num_ch"]) + "_" + str(occ["num_motif"]) + "_" + str(occ["num_occ"])), "wb") as fichier_sortie :
+                    with open("graphes_extension/graphes_extension_test/fichier_{}.pickle".format(str(occ["num_PDB"]) + "_" + str(occ["num_ch"]) + "_" + str(occ["num_motif"]) + "_" + str(occ["num_occ"])), "wb") as fichier_sortie :
                         mon_pickler = pickle.Pickler(fichier_sortie)
                         mon_pickler.dump(G)
                         

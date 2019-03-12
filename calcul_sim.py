@@ -195,34 +195,76 @@ def calcul_sim_non_cov_sans_motif_par_chaine(graphe1, graphe2, graphe_commun, ch
         sim = 0.0
     return sim, compteur_arete_1, compteur_arete_2, compteur_arete_commun
 
+def calcul_sommets_aretes_grands_graphes(graphe):
+    
+    somme_aretes = 0
+    for u,v,data in graphe.edges(data=True) :
+        if data["label"] != "B53" :
+            somme_aretes += 1
+    somme_aretes = somme_aretes/2 - 4
+    
+    return somme_aretes + graphe.number_of_nodes() - 5
+
+def calcul_sommets_aretes_grands_graphes_commun(graphe):
+    somme_aretes = 0
+    for u,v,data in graphe.edges(data=True) :
+        if data["type"] != "COV" :
+            somme_aretes += 1
+    somme_aretes = somme_aretes - 4
+    
+    return somme_aretes + graphe.number_of_nodes() - 5
+    
+
 ##Calcul de la somme des poids des sommets et des aretes avec nouvelle metrique
-def calcul_sommets_aretes_graphe(graphe):
+def calcul_sommets_aretes_graphe(graphe, cle):
     somme_sommets = 0
     for noeud, data in graphe.nodes(data=True) :
         if data["type"] == 1 : ## si de type 1 on multiplie par le coeff 3
             if len(graphe[noeud]) <= 1 :
                 somme_sommets += 3*data["poids"] ## cas ou le sommet de type 1 est lie a un nt qui nest pas present dans le graphe
-            else :
-                somme_sommets += 3*data["poids"]/2 ## cas ou le sommet de type 1 est lie a un nt qui est present dans le graphe
+            else  :
+                voisin = -1
+                for u,v, label in graphe.edges(data="label") :
+                    if noeud == u or noeud == v :
+                        if label != 'B53' :
+                            if u == noeud :
+                                voisin = v
+                            if v == noeud :
+                                voisin = u
+                try :
+                    if graphe.nodes[voisin]["type"] == 1 :            
+                        somme_sommets += 3*data["poids"]/2 ## cas ou le sommet de type 1 est lie a un sommet qui est present dans le graphe et qui est aussi de type 1
+                    else :
+                        somme_sommets += data["poids"] 
+                except KeyError :
+                    with open("fichier_pas_bon.txt", 'a') as f :
+                        f.write(str(cle) + "\n")
         else :
             somme_sommets += data["poids"]
             
     somme_sommets -= 5
-    
+
     compteur_arete = 0
     for u,v, data in graphe.edges(data=True) :
         if data["label"] != 'B53' and (graphe.nodes[u]["type"] != 1 or graphe.nodes[v]["type"] != 1):
             compteur_arete += 1
     compteur_arete = compteur_arete/2 - 4
     
+
+#     print(somme_sommets)
+#     print(compteur_arete)
+    
     return somme_sommets + compteur_arete
 
-def calcul_sommets_graphe_commun(graphe1, graphe2, graphe_commun):
+def calcul_sommets_graphe_commun(graphe1, graphe2, graphe_commun, cle):
     somme_sommets = 0
     for noeud in graphe_commun.nodes() :
+        
         if graphe1.nodes[noeud[0]]["type"] == 1 and graphe2.nodes[noeud[1]]["type"] == 1 :
             if len(graphe1[noeud[0]]) <= 1 and len(graphe2[noeud[1]]) <= 1  : ## cas ou les deux sont des helices isolees du reste du graphe
                 somme_sommets += 3*min(graphe1.nodes[noeud[0]]["poids"], graphe2.nodes[noeud[1]]["poids"])
+#                 if cle[0] == "fichier_5J7L_DA_50_21" and cle[1] == "fichier_5J7L_DA_48_20" :
+#                     print(noeud)
             else :
                 if len(graphe1[noeud[0]]) == 2 and len(graphe2[noeud[1]]) == 2 : 
                     voisin = None
@@ -231,14 +273,21 @@ def calcul_sommets_graphe_commun(graphe1, graphe2, graphe_commun):
                             if u == noeud :
                                 voisin = v
                             if v == noeud :
-                                voisin = u
-                            
-                    if (noeud, voisin) in graphe_commun.edges() : ## cas ou les deux sont des helices au sein du graphe, entre les memes chaines
+                                voisin = u        
+                    if voisin != None : ## cas ou les deux sont des helices au sein du graphe, entre les memes chaines
                         somme_sommets += 3*min(graphe1.nodes[noeud[0]]["poids"], graphe2.nodes[noeud[1]]["poids"])/2
                     else : ## cas ou les deux sont des helices au sein du graphe, pas entre les memes chaines
                         somme_sommets += min(graphe1.nodes[noeud[0]]["poids"], graphe2.nodes[noeud[1]]["poids"])
+#                         if cle[0] == "fichier_4V9F_0_30_4" and cle[1] == "fichier_4V9F_0_48_21" :
+                        #print("probleme")
+#                             print(noeud)
+#                             print(len(graphe1[noeud[0]]))
+#                             print(len(graphe2[noeud[1]]))
+#                         with open("fichier_pas_bon.txt", 'a') as f :
+#                             f.write(str(cle) + "\n")
+                        
                 else : ## cas ou l une est une helice isolee l autre une helice au sein du graphe
-                    somme_sommets += min(graphe1.nodes[noeud[0]]["poids"], graphe2.nodes[noeud[1]]["poids"])/2
+                    somme_sommets += min(graphe1.nodes[noeud[0]]["poids"], graphe2.nodes[noeud[1]]["poids"])
             
         elif graphe1.nodes[noeud[0]]["type"] == 0 and graphe2.nodes[noeud[1]]["type"] == 0 :
             somme_sommets += min(graphe1.nodes[noeud[0]]["poids"], graphe2.nodes[noeud[1]]["poids"])
@@ -252,18 +301,69 @@ def calcul_sommets_graphe_commun(graphe1, graphe2, graphe_commun):
     for noeud1,noeud2,typ in graphe_commun.edges(data="type") :
         if typ != 'COV' and (graphe1.nodes[noeud1[0]]["type"] != 1 and graphe1.nodes[noeud2[0]]["type"] != 1 and graphe2.nodes[noeud1[1]]["type"] != 1 and graphe2.nodes[noeud2[1]]["type"] != 1):
             compteur_arete += 1
+#             if cle[0] == "fichier_5J7L_DA_50_21" and cle[1] == "fichier_5J7L_DA_48_20" :
+#                 print(noeud1)
+#                 print(noeud2)
     compteur_arete -= 4    
+    
+#     print(somme_sommets)
+#     print(compteur_arete)
     
     return somme_sommets + compteur_arete
 
 
-def calcul_sim_avec_poids(graphe1, graphe2, graphe_commun):
-    poids_sommets_aretes_1 = calcul_sommets_aretes_graphe(graphe1)
-    poids_sommets_aretes_2 = calcul_sommets_aretes_graphe(graphe2)
-    poids_sommets_aretes_commun = calcul_sommets_graphe_commun(graphe1, graphe2, graphe_commun)
+def calcul_sim_avec_poids(graphe1, graphe2, graphe_commun, cle):
+    poids_sommets_aretes_1 = calcul_sommets_aretes_graphe(graphe1, cle)
+    poids_sommets_aretes_2 = calcul_sommets_aretes_graphe(graphe2, cle)
+    poids_sommets_aretes_commun = calcul_sommets_graphe_commun(graphe1, graphe2, graphe_commun, cle)
 
     sim = (poids_sommets_aretes_commun)/max(poids_sommets_aretes_1, poids_sommets_aretes_2)  
     return sim
+
+def calcul_aretes_avec_coeff(graphe, cle, coeffc, coeffa, coeffn):
+    somme_aretes = 0
+    
+    for u,v,data in graphe.edges(data=True) :
+        if data["label"] != 'B53' :
+            if data["label"] == '0' :
+                if coeffa == 1 :
+                    somme_aretes += graphe.nodes[u]["poids"]
+            elif graphe.nodes[u]["type"] == 1 and graphe.nodes[v]["type"] == 1 :
+                if coeffc == 1 :
+                    somme_aretes += graphe.nodes[u]["poids"]
+            else :
+                if coeffn == 1 :
+                    somme_aretes += graphe.nodes[u]["poids"]
+    somme_aretes = somme_aretes/2 - 4
+    
+    return somme_aretes
+
+def calcul_aretes_communes_avec_coeff(graphe_commun, graphe1, graphe2, cle, coeffc, coeffa, coeffn):
+    somme_aretes = 0
+    for u,v,data in graphe_commun.edges(data=True) :
+        if data["type"] != 'COV' :
+            if data["type"] == '0' :
+                if coeffa == 1 :
+                    somme_aretes += min(graphe1.nodes[u[0]]["poids"], graphe2.nodes[u[1]]["poids"]) 
+            elif graphe1.nodes[u[0]]["type"] == 1 and graphe1.nodes[v[0]]["type"] == 1 :
+                if coeffc == 1 :
+                    somme_aretes += min(graphe1.nodes[u[0]]["poids"], graphe2.nodes[u[1]]["poids"]) 
+            else :
+                if coeffn == 1 :
+                    somme_aretes += min(graphe1.nodes[u[0]]["poids"], graphe2.nodes[u[1]]["poids"]) 
+                    
+    somme_aretes = somme_aretes - 4
+    
+    return somme_aretes
+       
+
+def calcul_sim_aretes_avec_coeff(graphe1, graphe2, graphe_commun, cle, coeffc, coeffa, coeffn):
+    aretes_1 = calcul_aretes_avec_coeff(graphe1, cle, coeffc, coeffa, coeffn)
+    aretes_2 = calcul_aretes_avec_coeff(graphe2, cle, coeffc, coeffa, coeffn)
+    aretes_commun = calcul_aretes_communes_avec_coeff(graphe_commun, graphe1, graphe2, cle, coeffc, coeffa, coeffn)
+    
+    return aretes_commun/max(aretes_1, aretes_2)
+    
 
 def calcul_sim_avec_poids_par_chaine(graphe1, graphe2, graphe_commun, chaines_1, chaines_2, chaines_commun, i):
     
@@ -314,12 +414,12 @@ def calcul_sim_avec_poids_par_chaine(graphe1, graphe2, graphe_commun, chaines_1,
 #     else :
 #         poids_aretes_communes -= 1
     
-    print(poids_sommets_1)
-    print(poids_sommets_2)
-    print(poids_aretes_1)
-    print(poids_aretes_2)
-    print(poids_sommets_communs)
-    print(poids_aretes_communes)
+#     print(poids_sommets_1)
+#     print(poids_sommets_2)
+#     print(poids_aretes_1)
+#     print(poids_aretes_2)
+#     print(poids_sommets_communs)
+#     print(poids_aretes_communes)
     sim = (poids_sommets_communs + poids_aretes_communes)/max(poids_sommets_1 + poids_aretes_1, poids_sommets_2, poids_aretes_2)  
     return sim, poids_sommets_1, poids_aretes_1, poids_sommets_2, poids_aretes_2, poids_sommets_communs, poids_aretes_communes
     
@@ -601,9 +701,13 @@ def calcul_max_sim() :
  
 def stockage_sim(typ, depart):
     if depart == "extensions" :
-        with open("dico_graphe_epure_en_tout_test.pickle", 'rb') as fichier_graphe :
+        with open("dico_comp_complet_metrique_toutes_aretes.pickle", 'rb') as fichier_graphe :
             mon_depickler = pickle.Unpickler(fichier_graphe)
             dico_graphe = mon_depickler.load()
+
+#         with open("result_graphes_comp/graphe_comp_couples_possibles_fichier_1FJG_A_48_8_fichier_1FJG_A_138_3.pickle", 'rb') as fichier_graphe :
+#             mon_depickler = pickle.Unpickler(fichier_graphe)
+#             dico_graphe = mon_depickler.load()
              
             dico_sim = {}
             for cle in dico_graphe.keys() : 
@@ -623,9 +727,18 @@ def stockage_sim(typ, depart):
                             sim = calcul_sim_non_cov_sans_motif(graphe1, graphe2, dico_graphe[cle])
                         
                         elif typ == "non_cov"  :
-                            sim = calcul_sim_avec_poids(graphe1, graphe2, dico_graphe[cle])   
+                            sim = calcul_sim_avec_poids(graphe1, graphe2, dico_graphe[cle], cle)   
+#                             if cle[0] == "fichier_4V9F_0_30_4" and cle[1] == "fichier_4V9F_0_48_21" :
+                            print(cle[0])
+                            print(cle[1])
+                            print(sim)
+                            print(dico_graphe[cle].edges.data())
+                        elif typ == "toutes_aretes" :
+                            sim = calcul_sim_aretes_avec_coeff(graphe1, graphe2, dico_graphe[cle], cle, 1, 1, 1)
+                            
                                         
                         dico_sim.update({(cle[0][8:], cle[1][8:]) : sim})
+
     else :
         with open("fichier_comp_grands_graphes_V2.pickle", 'rb') as fichier_graphe :
             mon_depickler = pickle.Unpickler(fichier_graphe)
@@ -654,19 +767,27 @@ def stockage_sim(typ, depart):
                             print(elt2)
                             print(sim)
                             
-                        if elt1 == "1FJG_A_294_1" and elt2 == "5J5B_BA_294_2" :
+                        if elt1 == "5J7L_DA_50_21" and elt2 == "5J7L_DA_48_20" :
                             print("ramou")
                             print(sim)
                
-                        dico_sim.update({(elt1, elt2) : sim})
                         
-    with open("sim_"+depart+"_"+typ+".pickle", 'wb') as fichier_sim :
+                        
+                    else : ## type=="non_cov_sommets"
+                        sim = calcul_sommets_aretes_grands_graphes_commun(dico_graphe[cle])/max(calcul_sommets_aretes_grands_graphes(dico_grands_graphes[cle[0]]), calcul_sommets_aretes_grands_graphes(dico_grands_graphes[cle[1]]))
+                    dico_sim.update({(elt1, elt2) : sim})    
+    
+    #print(dico_sim)                    
+    with open("sim_"+depart+"_"+typ+"_metrique_toutes_aretes.pickle", 'wb') as fichier_sim :
         mon_pickler = pickle.Pickler(fichier_sim)
         mon_pickler.dump(dico_sim)
                     
 
 if __name__ == '__main__':
-         
+    
+    stockage_sim("toutes_aretes", "extensions")
+
+    
     #generation_fichier_csv_sim("sans_motif", "fichier_comp_grands_graphes_V2.pickle", "structure")
 #     with open("dico_graphe_epure_en_tout_test.pickle", 'rb') as fichier_graphe :
 #         mon_depickler = pickle.Unpickler(fichier_graphe)
@@ -691,15 +812,17 @@ if __name__ == '__main__':
     with open("sim_extensions_longue_distance.pickle", 'rb') as fichier_sim_1 :
         mon_depickler_1 = pickle.Unpickler(fichier_sim_1)
         dico_sim_extensions_longue_distance = mon_depickler_1.load()
-        
-        with open("sim_extensions_non_cov.pickle", 'rb') as fichier_sim_2 :
+         
+        with open("sim_extensions_non_cov_nouvelle_metrique.pickle", 'rb') as fichier_sim_2 :
             mon_depickler_2 = pickle.Unpickler(fichier_sim_2)
             dico_sim_extensions_non_cov = mon_depickler_2.load()
-            
-            with open("sim_graphe_global_non_cov.pickle", 'rb') as fichier_sim_3 :
+             
+            with open("sim_grands_graphes_non_cov_sommets_nouvelle_metrique.pickle", 'rb') as fichier_sim_3 :
                 mon_depickler_3 = pickle.Unpickler(fichier_sim_3)
                 dico_sim_graphe_global_non_cov = mon_depickler_3.load()
                 
+                print(dico_sim_graphe_global_non_cov)
+                 
                 ordres = ["el,ec,gc", "el,gc,ec", "ec,el,gc", "ec,gc,el", "gc,el,ec", "gc,ec,el"]
                 nombre_ordres = dict((el,0) for el in ordres)
                 moyenne_ordres = dict((el,[0,0]) for el in ordres)
@@ -708,84 +831,89 @@ if __name__ == '__main__':
 #                 print(dico_sim_extensions_longue_distance.keys())
 #                 print(dico_sim_extensions_non_cov.keys())
 #                 print(dico_sim_graphe_global_non_cov.keys())
-                for cle in dico_sim_extensions_longue_distance.keys() :
-                    if cle not in dico_sim_extensions_non_cov.keys() :
-                        cle_ex_non_cov = (cle[1], cle[0])
+                for cle in dico_sim_extensions_non_cov.keys() :
+                    if cle not in dico_sim_extensions_longue_distance.keys() :
+                        cle_ex_longue_distance = (cle[1], cle[0])
                     else :
-                        cle_ex_non_cov = cle
+                        cle_ex_longue_distance = cle
                     if cle not in dico_sim_graphe_global_non_cov.keys() :
                         cle_gg_non_cov = (cle[1], cle[0])
                     else :
                         cle_gg_non_cov = cle
-                            
-                    if dico_sim_extensions_longue_distance[cle][0] <= dico_sim_extensions_non_cov[cle_ex_non_cov] and dico_sim_extensions_longue_distance[cle][0] <= dico_sim_graphe_global_non_cov[cle_gg_non_cov][0] :
-                        if dico_sim_extensions_non_cov[cle_ex_non_cov] < dico_sim_graphe_global_non_cov[cle_gg_non_cov][0] :
+                             
+                    if dico_sim_extensions_longue_distance[cle_ex_longue_distance][0] <= dico_sim_extensions_non_cov[cle] and dico_sim_extensions_longue_distance[cle_ex_longue_distance][0] <= dico_sim_graphe_global_non_cov[cle_gg_non_cov] :
+                        if dico_sim_extensions_non_cov[cle] < dico_sim_graphe_global_non_cov[cle_gg_non_cov] :
                             nombre_ordres["el,ec,gc"] += 1
-                            moyenne_ordres["el,ec,gc"][0] += dico_sim_extensions_non_cov[cle_ex_non_cov] - dico_sim_extensions_longue_distance[cle][0]
-                            moyenne_ordres["el,ec,gc"][1] += dico_sim_graphe_global_non_cov[cle_gg_non_cov][0] - dico_sim_extensions_non_cov[cle_ex_non_cov]
-                            
+                            moyenne_ordres["el,ec,gc"][0] += dico_sim_extensions_non_cov[cle] - dico_sim_extensions_longue_distance[cle_ex_longue_distance][0]
+                            moyenne_ordres["el,ec,gc"][1] += dico_sim_graphe_global_non_cov[cle_gg_non_cov] - dico_sim_extensions_non_cov[cle]
+                             
                         else :
                             nombre_ordres["el,gc,ec"] += 1
-                            moyenne_ordres["el,gc,ec"][0] += dico_sim_graphe_global_non_cov[cle_gg_non_cov][0] - dico_sim_extensions_longue_distance[cle][0]
-                            moyenne_ordres["el,gc,ec"][1] += dico_sim_extensions_non_cov[cle_ex_non_cov] - dico_sim_graphe_global_non_cov[cle_gg_non_cov][0]
-                            
-                            print(cle)
-                            print(dico_sim_extensions_longue_distance[cle][0])
-                            print(dico_sim_extensions_non_cov[cle_ex_non_cov])
-                            print(dico_sim_graphe_global_non_cov[cle_gg_non_cov][0])
-                            
-                    elif dico_sim_extensions_non_cov[cle_ex_non_cov] <= dico_sim_extensions_longue_distance[cle][0] and dico_sim_extensions_non_cov[cle_ex_non_cov] <= dico_sim_graphe_global_non_cov[cle_gg_non_cov][0] :
-                        if dico_sim_extensions_longue_distance[cle][0] < dico_sim_graphe_global_non_cov[cle_gg_non_cov][0] :
+                            moyenne_ordres["el,gc,ec"][0] += dico_sim_graphe_global_non_cov[cle_gg_non_cov] - dico_sim_extensions_longue_distance[cle_ex_longue_distance][0]
+                            moyenne_ordres["el,gc,ec"][1] += dico_sim_extensions_non_cov[cle] - dico_sim_graphe_global_non_cov[cle_gg_non_cov]
+                             
+                             
+                            print(cle) 
+#                             print(cle_ex_longue_distance)
+#                             print(dico_sim_extensions_longue_distance[cle_ex_longue_distance][0])
+#                             print(dico_sim_extensions_non_cov[cle])
+#                             print(dico_sim_graphe_global_non_cov[cle_gg_non_cov])
+                             
+                    elif dico_sim_extensions_non_cov[cle] <= dico_sim_extensions_longue_distance[cle_ex_longue_distance][0] and dico_sim_extensions_non_cov[cle] <= dico_sim_graphe_global_non_cov[cle_gg_non_cov] :
+                        if dico_sim_extensions_longue_distance[cle_ex_longue_distance][0] < dico_sim_graphe_global_non_cov[cle_gg_non_cov] :
                             nombre_ordres["ec,el,gc"] += 1
-                            moyenne_ordres["ec,el,gc"][0] += dico_sim_extensions_longue_distance[cle][0] - dico_sim_extensions_non_cov[cle_ex_non_cov]
-                            moyenne_ordres["ec,el,gc"][1] += dico_sim_graphe_global_non_cov[cle_gg_non_cov][0] - dico_sim_extensions_longue_distance[cle][0]
-                            
-                            
+                            moyenne_ordres["ec,el,gc"][0] += dico_sim_extensions_longue_distance[cle_ex_longue_distance][0] - dico_sim_extensions_non_cov[cle]
+                            moyenne_ordres["ec,el,gc"][1] += dico_sim_graphe_global_non_cov[cle_gg_non_cov] - dico_sim_extensions_longue_distance[cle_ex_longue_distance][0]
+                             
+                             
                         else :
                             nombre_ordres["ec,gc,el"] += 1
-                            moyenne_ordres["ec,gc,el"][0] += dico_sim_graphe_global_non_cov[cle_gg_non_cov][0] - dico_sim_graphe_global_non_cov[cle_gg_non_cov][0]
-                            moyenne_ordres["ec,gc,el"][1] += dico_sim_extensions_longue_distance[cle][0] - dico_sim_graphe_global_non_cov[cle_gg_non_cov][0]
-                            
-                            
-                    elif dico_sim_graphe_global_non_cov[cle_gg_non_cov][0] <= dico_sim_extensions_longue_distance[cle][0] and dico_sim_graphe_global_non_cov[cle_gg_non_cov][0] <= dico_sim_extensions_non_cov[cle_ex_non_cov] :
-                        if dico_sim_extensions_longue_distance[cle][0] < dico_sim_extensions_non_cov[cle_ex_non_cov] :
+                            moyenne_ordres["ec,gc,el"][0] += dico_sim_graphe_global_non_cov[cle_gg_non_cov] - dico_sim_extensions_non_cov[cle]
+                            moyenne_ordres["ec,gc,el"][1] += dico_sim_extensions_longue_distance[cle_ex_longue_distance][0] - dico_sim_graphe_global_non_cov[cle_gg_non_cov]
+                             
+                             
+                    elif dico_sim_graphe_global_non_cov[cle_gg_non_cov] <= dico_sim_extensions_longue_distance[cle_ex_longue_distance][0] and dico_sim_graphe_global_non_cov[cle_gg_non_cov] <= dico_sim_extensions_non_cov[cle] :
+                        if dico_sim_extensions_longue_distance[cle_ex_longue_distance][0] < dico_sim_extensions_non_cov[cle] :
                             nombre_ordres["gc,el,ec"] += 1
-
-                            moyenne_ordres["gc,el,ec"][0] += dico_sim_extensions_longue_distance[cle][0] - dico_sim_graphe_global_non_cov[cle_gg_non_cov][0]
-                            moyenne_ordres["gc,el,ec"][1] += dico_sim_extensions_non_cov[cle_ex_non_cov] - dico_sim_extensions_longue_distance[cle][0]
-                            
+ 
+                            moyenne_ordres["gc,el,ec"][0] += dico_sim_extensions_longue_distance[cle_ex_longue_distance][0] - dico_sim_graphe_global_non_cov[cle_gg_non_cov]
+                            moyenne_ordres["gc,el,ec"][1] += dico_sim_extensions_non_cov[cle] - dico_sim_extensions_longue_distance[cle_ex_longue_distance][0]
+                             
                         else :
                             nombre_ordres["gc,ec,el"] += 1
-                            moyenne_ordres["gc,ec,el"][0] += dico_sim_extensions_non_cov[cle_ex_non_cov] - dico_sim_graphe_global_non_cov[cle_gg_non_cov][0]
-                            moyenne_ordres["gc,ec,el"][1] += dico_sim_extensions_longue_distance[cle][0] - dico_sim_extensions_non_cov[cle_ex_non_cov]
-                            
-                            
+                            moyenne_ordres["gc,ec,el"][0] += dico_sim_extensions_non_cov[cle] - dico_sim_graphe_global_non_cov[cle_gg_non_cov]
+                            moyenne_ordres["gc,ec,el"][1] += dico_sim_extensions_longue_distance[cle_ex_longue_distance][0] - dico_sim_extensions_non_cov[cle]
+                             
+                             
                     else :
                         print("autre cas?")
-                        print(dico_sim_graphe_global_non_cov[cle_gg_non_cov][0])
-                        print(dico_sim_extensions_longue_distance[cle][0])
-                        print(dico_sim_extensions_non_cov[cle_ex_non_cov])
-                        
+                        print(dico_sim_graphe_global_non_cov[cle_gg_non_cov])
+                        print(dico_sim_extensions_longue_distance[cle_ex_longue_distance][0])
+                        print(dico_sim_extensions_non_cov[cle])
+                         
                 print(nombre_ordres)
-                
+                 
                 moyenne_ordres["el,ec,gc"][0] = moyenne_ordres["el,ec,gc"][0]/nombre_ordres["el,ec,gc"]
                 moyenne_ordres["el,ec,gc"][1] = moyenne_ordres["el,ec,gc"][1]/nombre_ordres["el,ec,gc"]
-                
+                 
                 moyenne_ordres["ec,el,gc"][0] = moyenne_ordres["ec,el,gc"][0]/nombre_ordres["ec,el,gc"]
                 moyenne_ordres["ec,el,gc"][1] = moyenne_ordres["ec,el,gc"][1]/nombre_ordres["ec,el,gc"]
-                
+                 
                 moyenne_ordres["ec,gc,el"][0] = moyenne_ordres["ec,gc,el"][0]/nombre_ordres["ec,gc,el"]
                 moyenne_ordres["ec,gc,el"][1] = moyenne_ordres["ec,gc,el"][1]/nombre_ordres["ec,gc,el"]
-                
+                 
                 moyenne_ordres["el,gc,ec"][0] = moyenne_ordres["el,gc,ec"][0]/nombre_ordres["el,gc,ec"]
                 moyenne_ordres["el,gc,ec"][1] = moyenne_ordres["el,gc,ec"][1]/nombre_ordres["el,gc,ec"]
-                
+                 
                 moyenne_ordres["gc,el,ec"][0] = moyenne_ordres["gc,el,ec"][0]/nombre_ordres["gc,el,ec"]
                 moyenne_ordres["gc,el,ec"][1] = moyenne_ordres["gc,el,ec"][1]/nombre_ordres["gc,el,ec"]
-                
+                 
                 moyenne_ordres["gc,ec,el"][0] = moyenne_ordres["gc,ec,el"][0]/nombre_ordres["gc,ec,el"]
                 moyenne_ordres["gc,ec,el"][1] = moyenne_ordres["gc,ec,el"][1]/nombre_ordres["gc,ec,el"]
-                
+                 
                 print(moyenne_ordres)
+                
+                print(dico_sim_graphe_global_non_cov[('5DM6_X_48_9', '1FJG_A_109_6')])
+                
                 
                 

@@ -9,11 +9,11 @@ import matplotlib.pyplot as plt
 from networkx.classes.function import get_node_attributes
 import os
 
-with open("fichier_affichage_version3_avec_boucles_test_avec_digraph_plus_type_de_liens.txt", 'w') as fichier :
-    for element in os.listdir('graphes_extension/'):
-        if "pickle" in element :
-# element = "fichier_3JCS_1_48_18.pickle"
-            with open("graphes_extension/"+element, 'rb') as fichier_entree :
+# with open("fichier_affichage_version3_avec_boucles_test_avec_digraph_plus_type_de_liens.txt", 'w') as fichier :
+#     for element in os.listdir('graphes_extension/'):
+#         if "pickle" in element :
+element = "fichier_4L81_A_25_77.pickle"
+with open("graphes_extension/graphes_extension_test/"+element, 'rb') as fichier_entree :
                 print(element)
                 
                 mon_depickler = pickle.Unpickler(fichier_entree)
@@ -27,8 +27,8 @@ with open("fichier_affichage_version3_avec_boucles_test_avec_digraph_plus_type_d
                 G.nodes[4]["coordonnees"] = (2.0,0.0)
                 G.nodes[5]["coordonnees"] = (3.0,0.5)
                  
-                fichier.write(str(element)+"\n") 
-                fichier.write(str(G.number_of_nodes())+"\n") 
+#                 fichier.write(str(element)+"\n") 
+#                 fichier.write(str(G.number_of_nodes())+"\n") 
                 #print(G.nodes())
                 
                 for noeud in G.nodes() :
@@ -111,11 +111,11 @@ with open("fichier_affichage_version3_avec_boucles_test_avec_digraph_plus_type_d
                                         #fichier.write("probleme\n")
                                         print("probleme") 
                                     
-                
-                for noeud in G.nodes() :
-                    fichier.write(str(noeud) + " " + str(G.nodes[noeud])+"\n")
-                for u,v,edata in G.edges(data=True) :
-                    fichier.write(str(u)+ "'" +str(v) + " " + str(edata["label"])+"\n")
+#                 
+#                 for noeud in G.nodes() :
+#                     fichier.write(str(noeud) + " " + str(G.nodes[noeud])+"\n")
+#                 for u,v,edata in G.edges(data=True) :
+#                     fichier.write(str(u)+ "'" +str(v) + " " + str(edata["label"])+"\n")
                               
                 pos = get_node_attributes(G, 'coordonnees')
                 #print(pos)
@@ -159,9 +159,9 @@ with open("fichier_affichage_version3_avec_boucles_test_avec_digraph_plus_type_d
                 #nx.draw_networkx_edge_labels(G,pos, edge_labels=edge_labels)
                 nx.draw_networkx_edges(G,pos,edge_color=edge_colors)
                 plt.axis('off')
-                plt.savefig("graphes_extension/"+element[:len(element)-7]+".png") # save as png
+                #plt.savefig("graphes_extension/"+element[:len(element)-7]+".png") # save as png
                 #plt.savefig("graphes_extension/fichier_1FJG_A_48_8.png") # save as png
-                #plt.show()
+                plt.show()
                 plt.clf()
                 plt.close()
                 

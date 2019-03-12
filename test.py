@@ -135,16 +135,97 @@ import networkx as nx
     
     
 with open("graphs_2.92.pickle", 'rb') as fichier_tout :
-        mon_depickler_graphes = pickle.Unpickler(fichier_tout)
-        graphes = mon_depickler_graphes.load() 
-        
-        with open("fichier_struct_second_1GID_B.txt", 'w') as fichier :
-            
-            for noeud, data in graphes[('1GID', 'B')].nodes(data=True) :
-                fichier.write(str(noeud) + " "+ str(data)+ "\n")
-            
-            for u,v,data in graphes[('1GID', 'B')].edges(data=True) :
-                fichier.write(str((u,v)) + " "+ str(data) + "\n")
-            
-            
-                                    
+    mon_depickler_graphes = pickle.Unpickler(fichier_tout)
+    graphes = mon_depickler_graphes.load() 
+      
+    with open("fichier_struct_second_4L81_A.txt", 'w') as fichier :
+          
+        for noeud, data in graphes[('4L81', 'A')].nodes(data=True) :
+            fichier.write(str(noeud) + " "+ str(data)+ "\n")
+          
+        for u,v,data in graphes[('4L81', 'A')].edges(data=True) :
+            fichier.write(str((u,v)) + " "+ str(data) + "\n")
+
+pas_bon = []         
+for fic in os.listdir("graphes_extension") :
+    if "pickle" in fic :
+        for fic_2 in os.listdir("graphes_extension/graphes_extension_ok") :
+            if fic == fic_2 :
+                with open("graphes_extension/"+fic, 'rb') as fichier_1 :
+                    mon_depickler = pickle.Unpickler(fichier_1)
+                    graphe1 = mon_depickler.load()
+                      
+                    with open("graphes_extension/graphes_extension_ok/"+fic_2, 'rb') as fichier_2 :
+                        mon_depickler_2 = pickle.Unpickler(fichier_2)
+                        graphe2 = mon_depickler_2.load()
+                          
+                          
+                        print(fic)
+                        for noeud, data in graphe1.nodes(data=True) :
+                            if noeud not in graphe2.nodes() and data["type"] != -1 :
+                                print("pb1")
+                                print(noeud)
+                                if fic not in pas_bon :
+                                    pas_bon.append(fic)
+                          
+                        for noeud, data in graphe2.nodes(data=True) :
+                            if noeud not in graphe1.nodes() :
+                                print("pb2")
+                                print(noeud)
+                                if fic not in pas_bon :
+                                    pas_bon.append(fic)            
+                          
+                              
+                        for u,v, data in graphe1.edges(data=True) :
+                            if (u,v) not in graphe2.edges() and data["label"] != '0' :
+                                print("pb3")
+                                print((u,v))
+                                if fic not in pas_bon :
+                                    pas_bon.append(fic) 
+                                      
+                        for u,v, data in graphe2.edges(data=True) :
+                            if (u,v) not in graphe1.edges() :
+                                print("pb4")
+                                print((u,v))
+                                if fic not in pas_bon :
+                                    pas_bon.append(fic) 
+                      
+print(pas_bon) 
+
+
+# with open("graphs_2.92.pickle", 'rb') as fichier_tout :
+#     mon_depickler_graphes = pickle.Unpickler(fichier_tout)
+#     graphes = mon_depickler_graphes.load() 
+#     for fic in os.listdir("graphes_extension/graphes_extension_test") :
+#         if "pickle" in fic :
+#             with open("graphes_extension/graphes_extension_test/"+fic, 'rb') as fichier_1 :
+#                 mon_depickler = pickle.Unpickler(fichier_1)
+#                 graphe1 = mon_depickler.load()
+#                 print(fic)
+#                 nom_cle = (fic.split("_")[1], fic.split("_")[2])
+#                 ## verification de pas de boucle dans le graphe
+#                 for noeud in graphe1.nodes() : 
+#                     if (noeud, noeud) in graphe1.edges() :
+#                         print("pb")
+#                  
+#                 compte = [0,0,0,0,0]
+#                 for noeud, data in graphe1.nodes(data=True) :
+#                     if data["type"] != None and data["type"] != -1 :
+#                         for elt in data["chaine"]:
+#                             if 1 in data["position"] :
+#                                 compte[elt-1] = 10
+#                             elif graphes[nom_cle].number_of_nodes() in data["position"] :
+#                                 compte[elt-1] = 10
+#                             else :
+#                                 compte[elt-1] += data["poids"]
+#                          
+#                 for i in range(4) :
+#                     if compte[i] != 10 :
+#                          
+#                         print('pb')
+#                         print(compte)
+#                         print(graphe1.nodes.data())
+                     
+
+
+           
